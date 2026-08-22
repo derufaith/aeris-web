@@ -10,7 +10,7 @@ export default function Home() {
           </Link>
 
           <nav className="flex items-center gap-6">
-            <Link href="/screening" className="hover:text-cyan-400">
+            <Link href="/identitas" className="hover:text-cyan-400">
               Screening
             </Link>
 
@@ -52,7 +52,7 @@ export default function Home() {
 
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
-              href="/screening"
+              href="/identitas"
               className="rounded-2xl bg-cyan-400 px-7 py-4 font-black text-slate-950 hover:bg-cyan-300"
             >
               Mulai Screening
@@ -75,8 +75,9 @@ export default function Home() {
           </h2>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
+
             <Link
-              href="/screening"
+              href="/identitas"
               className="rounded-3xl border border-slate-800 bg-slate-900 p-7 hover:border-cyan-400"
             >
               <h3 className="text-xl font-bold text-cyan-400">
@@ -116,6 +117,7 @@ export default function Home() {
                 perilaku hidup sehat.
               </p>
             </Link>
+
           </div>
         </div>
       </section>
