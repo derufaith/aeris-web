@@ -65,6 +65,10 @@ export default function IdentitasPage() {
   }
 
   async function lanjutkan() {
+    // =========================
+    // VALIDASI
+    // =========================
+
     if (!nama.trim()) {
       alert("Silakan masukkan nama.");
       return;
@@ -87,6 +91,10 @@ export default function IdentitasPage() {
 
     setLoading(true);
 
+    // =========================
+    // MEMBUAT DATA KELAS
+    // =========================
+
     let kelasDatabase = "";
 
     if (jenis === "Siswa") {
@@ -101,34 +109,56 @@ export default function IdentitasPage() {
       kelasDatabase = `Warga Sekolah Lainnya - ${detail}`;
     }
 
-    // Simpan ke Supabase
+    // =========================
+    // SIMPAN KE SUPABASE
+    // =========================
+
     const { data, error } = await supabase
       .from("users")
       .insert({
         nama: nama.trim(),
         no_hp: noHp.trim(),
+
+        // WAJIB ADA
+        jenis_pengguna: jenis,
+
         kelas: kelasDatabase,
       })
       .select()
       .single();
 
+    // =========================
+    // JIKA ERROR
+    // =========================
+
     if (error) {
       console.error("SUPABASE ERROR:", error);
 
       alert(
-        `Gagal menyimpan data:\n\n${error.message}\n\nKode: ${error.code ?? "-"}`
+        `Gagal menyimpan data:\n\n${error.message}\n\nKode: ${
+          error.code ?? "-"
+        }`
       );
 
       setLoading(false);
       return;
     }
 
-    // Simpan identitas sementara di browser
-    localStorage.setItem("aeris_user", JSON.stringify(data));
+    // =========================
+    // SIMPAN DATA SEMENTARA
+    // =========================
+
+    localStorage.setItem(
+      "aeris_user",
+      JSON.stringify(data)
+    );
 
     setLoading(false);
 
-    // Masuk ke screening
+    // =========================
+    // MASUK KE SCREENING
+    // =========================
+
     router.push("/screening");
   }
 
@@ -137,7 +167,7 @@ export default function IdentitasPage() {
 
       <div className="w-full max-w-xl">
 
-        {/* HEADER */}
+        {/* ================= HEADER ================= */}
 
         <div className="text-center mb-10">
 
@@ -155,11 +185,11 @@ export default function IdentitasPage() {
 
         </div>
 
-        {/* CARD */}
+        {/* ================= CARD ================= */}
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-9">
 
-          {/* NAMA */}
+          {/* ================= NAMA ================= */}
 
           <div className="mb-6">
 
@@ -177,7 +207,7 @@ export default function IdentitasPage() {
 
           </div>
 
-          {/* NOMOR HP */}
+          {/* ================= NOMOR HP ================= */}
 
           <div className="mb-8">
 
@@ -195,7 +225,7 @@ export default function IdentitasPage() {
 
           </div>
 
-          {/* JENIS PENGGUNA */}
+          {/* ================= JENIS PENGGUNA ================= */}
 
           <div className="mb-8">
 
@@ -205,7 +235,7 @@ export default function IdentitasPage() {
 
             <div className="grid gap-3">
 
-              {/* SISWA */}
+              {/* ================= SISWA ================= */}
 
               <button
                 type="button"
@@ -220,6 +250,7 @@ export default function IdentitasPage() {
                 <div className="flex items-center justify-between">
 
                   <div>
+
                     <p className="font-bold">
                       1. Siswa
                     </p>
@@ -227,6 +258,7 @@ export default function IdentitasPage() {
                     <p className="mt-1 text-sm text-slate-500">
                       Peserta didik SMA Negeri 3 Cilacap
                     </p>
+
                   </div>
 
                   {jenis === "Siswa" && (
@@ -239,7 +271,7 @@ export default function IdentitasPage() {
 
               </button>
 
-              {/* GURU */}
+              {/* ================= GURU ================= */}
 
               <button
                 type="button"
@@ -254,6 +286,7 @@ export default function IdentitasPage() {
                 <div className="flex items-center justify-between">
 
                   <div>
+
                     <p className="font-bold">
                       2. Guru
                     </p>
@@ -261,6 +294,7 @@ export default function IdentitasPage() {
                     <p className="mt-1 text-sm text-slate-500">
                       Tenaga pendidik dan administrasi
                     </p>
+
                   </div>
 
                   {jenis === "Guru" && (
@@ -273,7 +307,7 @@ export default function IdentitasPage() {
 
               </button>
 
-              {/* WARGA SEKOLAH */}
+              {/* ================= WARGA SEKOLAH ================= */}
 
               <button
                 type="button"
@@ -290,6 +324,7 @@ export default function IdentitasPage() {
                 <div className="flex items-center justify-between">
 
                   <div>
+
                     <p className="font-bold">
                       3. Warga Sekolah Lainnya
                     </p>
@@ -297,6 +332,7 @@ export default function IdentitasPage() {
                     <p className="mt-1 text-sm text-slate-500">
                       Karyawan / Kantin
                     </p>
+
                   </div>
 
                   {jenis === "Warga Sekolah Lainnya" && (
@@ -313,7 +349,7 @@ export default function IdentitasPage() {
 
           </div>
 
-          {/* PILIHAN SISWA */}
+          {/* ================= PILIHAN SISWA ================= */}
 
           {jenis === "Siswa" && (
             <div className="mb-8">
@@ -324,7 +360,9 @@ export default function IdentitasPage() {
 
               <select
                 value={detail}
-                onChange={(e) => setDetail(e.target.value)}
+                onChange={(e) =>
+                  setDetail(e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-cyan-400"
               >
 
@@ -332,7 +370,10 @@ export default function IdentitasPage() {
                   -- Pilih kelas --
                 </option>
 
+                {/* KELAS X */}
+
                 <optgroup label="Kelas X">
+
                   {kelasSiswa
                     .filter((kelas) =>
                       kelas.startsWith("X-")
@@ -345,9 +386,13 @@ export default function IdentitasPage() {
                         {kelas}
                       </option>
                     ))}
+
                 </optgroup>
 
+                {/* KELAS XI */}
+
                 <optgroup label="Kelas XI">
+
                   {kelasSiswa
                     .filter((kelas) =>
                       kelas.startsWith("XI-")
@@ -360,9 +405,13 @@ export default function IdentitasPage() {
                         {kelas}
                       </option>
                     ))}
+
                 </optgroup>
 
+                {/* KELAS XII */}
+
                 <optgroup label="Kelas XII">
+
                   {kelasSiswa
                     .filter((kelas) =>
                       kelas.startsWith("XII-")
@@ -375,6 +424,7 @@ export default function IdentitasPage() {
                         {kelas}
                       </option>
                     ))}
+
                 </optgroup>
 
               </select>
@@ -382,7 +432,7 @@ export default function IdentitasPage() {
             </div>
           )}
 
-          {/* PILIHAN GURU */}
+          {/* ================= PILIHAN GURU ================= */}
 
           {jenis === "Guru" && (
             <div className="mb-8">
@@ -393,7 +443,9 @@ export default function IdentitasPage() {
 
               <select
                 value={detail}
-                onChange={(e) => setDetail(e.target.value)}
+                onChange={(e) =>
+                  setDetail(e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-cyan-400"
               >
 
@@ -415,7 +467,7 @@ export default function IdentitasPage() {
             </div>
           )}
 
-          {/* WARGA SEKOLAH LAINNYA */}
+          {/* ================= WARGA SEKOLAH ================= */}
 
           {jenis === "Warga Sekolah Lainnya" && (
             <div className="mb-8">
@@ -445,6 +497,7 @@ export default function IdentitasPage() {
                             : "border-slate-700 hover:border-cyan-400"
                         }`}
                       >
+
                         {pilihan}
 
                         {aktif && (
@@ -452,6 +505,7 @@ export default function IdentitasPage() {
                             ✓
                           </span>
                         )}
+
                       </button>
                     );
                   }
@@ -462,19 +516,24 @@ export default function IdentitasPage() {
             </div>
           )}
 
-          {/* TOMBOL */}
+          {/* ================= TOMBOL ================= */}
 
           <button
+            type="button"
             onClick={lanjutkan}
             disabled={loading}
             className="w-full rounded-xl bg-cyan-400 px-6 py-4 font-black text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
           >
+
             {loading
               ? "Menyimpan..."
               : "Lanjut ke Screening →"}
+
           </button>
 
         </div>
+
+        {/* ================= FOOTER ================= */}
 
         <p className="mt-6 text-center text-xs text-slate-600">
           Data digunakan untuk sistem screening AERIS.
