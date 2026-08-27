@@ -113,10 +113,10 @@ export default function IdentitasPage() {
       .single();
 
     if (error) {
-      console.error(error);
+      console.error("SUPABASE ERROR:", error);
 
       alert(
-        "Data gagal disimpan. Periksa koneksi Supabase atau struktur tabel users."
+        `Gagal menyimpan data:\n\n${error.message}\n\nKode: ${error.code ?? "-"}`
       );
 
       setLoading(false);
@@ -124,10 +124,7 @@ export default function IdentitasPage() {
     }
 
     // Simpan identitas sementara di browser
-    localStorage.setItem(
-      "aeris_user",
-      JSON.stringify(data)
-    );
+    localStorage.setItem("aeris_user", JSON.stringify(data));
 
     setLoading(false);
 
