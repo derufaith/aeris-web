@@ -2,214 +2,489 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+const kelasSiswa = [
+  "X-E1",
+  "X-E2",
+  "X-E3",
+  "X-E4",
+  "X-E5",
+  "X-E6",
+  "X-E7",
+  "X-E8",
+  "X-E9",
+  "X-E10",
+  "X-E11",
 
-const kelas10 = Array.from({ length: 11 }, (_, i) => `XE${i + 1}`);
-const kelas11 = Array.from({ length: 11 }, (_, i) => `XIF${i + 1}`);
-const kelas12 = Array.from({ length: 11 }, (_, i) => `XIIF${i + 1}`);
+  "XI-F1",
+  "XI-F2",
+  "XI-F3",
+  "XI-F4",
+  "XI-F5",
+  "XI-F6",
+  "XI-F7",
+  "XI-F8",
+  "XI-F9",
+  "XI-F10",
+  "XI-F11",
+
+  "XII-F1",
+  "XII-F2",
+  "XII-F3",
+  "XII-F4",
+  "XII-F5",
+  "XII-F6",
+  "XII-F7",
+  "XII-F8",
+  "XII-F9",
+  "XII-F10",
+  "XII-F11",
+];
+
+const pilihanGuru = [
+  "Tenaga Pendidik",
+  "Tenaga Administrasi",
+  "Rumpun Pendidik",
+];
 
 export default function IdentitasPage() {
   const router = useRouter();
 
   const [nama, setNama] = useState("");
-  const [kelas, setKelas] = useState("");
   const [noHp, setNoHp] = useState("");
-  const [mediaSosial, setMediaSosial] = useState("");
+
+  const [jenis, setJenis] = useState("");
+  const [detail, setDetail] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function pilihJenis(value: string) {
+    setJenis(value);
+    setDetail("");
+  }
 
-    setError("");
-
+  async function lanjutkan() {
     if (!nama.trim()) {
-      setError("Nama lengkap wajib diisi.");
-      return;
-    }
-
-    if (!kelas) {
-      setError("Silakan pilih kelas.");
+      alert("Silakan masukkan nama.");
       return;
     }
 
     if (!noHp.trim()) {
-      setError("Nomor HP wajib diisi.");
+      alert("Silakan masukkan nomor HP.");
+      return;
+    }
+
+    if (!jenis) {
+      alert("Silakan pilih jenis pengguna.");
+      return;
+    }
+
+    if (!detail) {
+      alert("Silakan pilih kategori Anda.");
       return;
     }
 
     setLoading(true);
 
-    try {
-      const { data, error: insertError } = await supabase
-        .from("users")
-        .insert({
-          nama: nama.trim(),
-          kelas,
-          no_hp: noHp.trim(),
-          media_sosial: mediaSosial.trim() || null,
-        })
-        .select()
-        .single();
+    let kelasDatabase = "";
 
-      if (insertError) {
-        console.error(insertError);
-        setError("Data gagal disimpan. Silakan coba lagi.");
-        return;
-      }
+    if (jenis === "Siswa") {
+      kelasDatabase = `Siswa - ${detail}`;
+    }
 
-      localStorage.setItem(
-        "aeris_user",
-        JSON.stringify({
-          id: data.id,
-          nama: data.nama,
-          kelas: data.kelas,
-          no_hp: data.no_hp,
-          media_sosial: data.media_sosial,
-        })
+    if (jenis === "Guru") {
+      kelasDatabase = `Guru - ${detail}`;
+    }
+
+    if (jenis === "Warga Sekolah Lainnya") {
+      kelasDatabase = `Warga Sekolah Lainnya - ${detail}`;
+    }
+
+    // Simpan ke Supabase
+    const { data, error } = await supabase
+      .from("users")
+      .insert({
+        nama: nama.trim(),
+        no_hp: noHp.trim(),
+        kelas: kelasDatabase,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+
+      alert(
+        "Data gagal disimpan. Periksa koneksi Supabase atau struktur tabel users."
       );
 
-      router.push("/screening");
-
-    } catch (error) {
-      console.error(error);
-      setError("Terjadi kesalahan pada sistem.");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    // Simpan identitas sementara di browser
+    localStorage.setItem(
+      "aeris_user",
+      JSON.stringify(data)
+    );
+
+    setLoading(false);
+
+    // Masuk ke screening
+    router.push("/screening");
   }
 
   return (
-    <main className="min-h-screen bg-[#050b14] text-white flex items-center justify-center px-6 py-10">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen bg-slate-950 text-white px-6 py-10 flex items-center justify-center">
 
-        <div className="text-center mb-8">
-          <div className="text-cyan-400 text-sm font-semibold tracking-[0.3em] mb-3">
-            AERIS SYSTEM
-          </div>
+      <div className="w-full max-w-xl">
 
-          <h1 className="text-3xl font-bold">
+        {/* HEADER */}
+
+        <div className="text-center mb-10">
+
+          <p className="text-cyan-400 font-bold tracking-[0.3em] text-sm">
+            AERIS
+          </p>
+
+          <h1 className="mt-3 text-4xl font-black">
             Identitas Pengguna
           </h1>
 
-          <p className="text-gray-400 mt-3 text-sm">
+          <p className="mt-3 text-slate-400">
             Lengkapi data sebelum memulai screening.
           </p>
+
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white/5 border border-cyan-400/20 rounded-2xl p-6 shadow-2xl backdrop-blur"
-        >
+        {/* CARD */}
+
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-9">
 
           {/* NAMA */}
-          <label className="block mb-2 text-sm text-gray-300">
-            Nama Lengkap
-          </label>
 
-          <input
-            type="text"
-            value={nama}
-            onChange={(e) => setNama(e.target.value)}
-            placeholder="Masukkan nama lengkap"
-            className="w-full mb-5 px-4 py-3 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-cyan-400"
-          />
+          <div className="mb-6">
 
-          {/* KELAS */}
-          <label className="block mb-2 text-sm text-gray-300">
-            Kelas
-          </label>
+            <label className="mb-2 block text-sm font-bold text-slate-300">
+              Nama Lengkap
+            </label>
 
-          <select
-            value={kelas}
-            onChange={(e) => setKelas(e.target.value)}
-            className="w-full mb-5 px-4 py-3 rounded-xl bg-[#101a27] border border-white/10 outline-none focus:border-cyan-400"
-          >
-            <option value="">Pilih kelas</option>
+            <input
+              type="text"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+              placeholder="Masukkan nama lengkap"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
+            />
 
-            <optgroup label="Kelas 10">
-              {kelas10.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </optgroup>
-
-            <optgroup label="Kelas 11">
-              {kelas11.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </optgroup>
-
-            <optgroup label="Kelas 12">
-              {kelas12.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </optgroup>
-          </select>
+          </div>
 
           {/* NOMOR HP */}
-          <label className="block mb-2 text-sm text-gray-300">
-            Nomor HP
-          </label>
 
-          <input
-            type="tel"
-            value={noHp}
-            onChange={(e) => setNoHp(e.target.value)}
-            placeholder="Contoh: 081234567890"
-            className="w-full mb-5 px-4 py-3 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-cyan-400"
-          />
+          <div className="mb-8">
 
-          {/* MEDIA SOSIAL */}
-          <label className="block mb-2 text-sm text-gray-300">
-            Media Sosial
-            <span className="text-gray-500 ml-2">
-              (opsional)
-            </span>
-          </label>
+            <label className="mb-2 block text-sm font-bold text-slate-300">
+              Nomor HP
+            </label>
 
-          <input
-            type="text"
-            value={mediaSosial}
-            onChange={(e) => setMediaSosial(e.target.value)}
-            placeholder="@username"
-            className="w-full mb-6 px-4 py-3 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-cyan-400"
-          />
+            <input
+              type="tel"
+              value={noHp}
+              onChange={(e) => setNoHp(e.target.value)}
+              placeholder="Contoh: 081234567890"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
+            />
 
-          {error && (
-            <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {error}
+          </div>
+
+          {/* JENIS PENGGUNA */}
+
+          <div className="mb-8">
+
+            <label className="mb-3 block text-sm font-bold text-slate-300">
+              Anda adalah
+            </label>
+
+            <div className="grid gap-3">
+
+              {/* SISWA */}
+
+              <button
+                type="button"
+                onClick={() => pilihJenis("Siswa")}
+                className={`rounded-2xl border p-5 text-left transition ${
+                  jenis === "Siswa"
+                    ? "border-cyan-400 bg-cyan-400/10"
+                    : "border-slate-700 hover:border-cyan-400"
+                }`}
+              >
+
+                <div className="flex items-center justify-between">
+
+                  <div>
+                    <p className="font-bold">
+                      1. Siswa
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Peserta didik SMA Negeri 3 Cilacap
+                    </p>
+                  </div>
+
+                  {jenis === "Siswa" && (
+                    <span className="text-xl text-cyan-400">
+                      ✓
+                    </span>
+                  )}
+
+                </div>
+
+              </button>
+
+              {/* GURU */}
+
+              <button
+                type="button"
+                onClick={() => pilihJenis("Guru")}
+                className={`rounded-2xl border p-5 text-left transition ${
+                  jenis === "Guru"
+                    ? "border-cyan-400 bg-cyan-400/10"
+                    : "border-slate-700 hover:border-cyan-400"
+                }`}
+              >
+
+                <div className="flex items-center justify-between">
+
+                  <div>
+                    <p className="font-bold">
+                      2. Guru
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Tenaga pendidik dan administrasi
+                    </p>
+                  </div>
+
+                  {jenis === "Guru" && (
+                    <span className="text-xl text-cyan-400">
+                      ✓
+                    </span>
+                  )}
+
+                </div>
+
+              </button>
+
+              {/* WARGA SEKOLAH */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  pilihJenis("Warga Sekolah Lainnya")
+                }
+                className={`rounded-2xl border p-5 text-left transition ${
+                  jenis === "Warga Sekolah Lainnya"
+                    ? "border-cyan-400 bg-cyan-400/10"
+                    : "border-slate-700 hover:border-cyan-400"
+                }`}
+              >
+
+                <div className="flex items-center justify-between">
+
+                  <div>
+                    <p className="font-bold">
+                      3. Warga Sekolah Lainnya
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Karyawan / Kantin
+                    </p>
+                  </div>
+
+                  {jenis === "Warga Sekolah Lainnya" && (
+                    <span className="text-xl text-cyan-400">
+                      ✓
+                    </span>
+                  )}
+
+                </div>
+
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* PILIHAN SISWA */}
+
+          {jenis === "Siswa" && (
+            <div className="mb-8">
+
+              <label className="mb-2 block text-sm font-bold text-slate-300">
+                Pilih Kelas
+              </label>
+
+              <select
+                value={detail}
+                onChange={(e) => setDetail(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-cyan-400"
+              >
+
+                <option value="">
+                  -- Pilih kelas --
+                </option>
+
+                <optgroup label="Kelas X">
+                  {kelasSiswa
+                    .filter((kelas) =>
+                      kelas.startsWith("X-")
+                    )
+                    .map((kelas) => (
+                      <option
+                        key={kelas}
+                        value={kelas}
+                      >
+                        {kelas}
+                      </option>
+                    ))}
+                </optgroup>
+
+                <optgroup label="Kelas XI">
+                  {kelasSiswa
+                    .filter((kelas) =>
+                      kelas.startsWith("XI-")
+                    )
+                    .map((kelas) => (
+                      <option
+                        key={kelas}
+                        value={kelas}
+                      >
+                        {kelas}
+                      </option>
+                    ))}
+                </optgroup>
+
+                <optgroup label="Kelas XII">
+                  {kelasSiswa
+                    .filter((kelas) =>
+                      kelas.startsWith("XII-")
+                    )
+                    .map((kelas) => (
+                      <option
+                        key={kelas}
+                        value={kelas}
+                      >
+                        {kelas}
+                      </option>
+                    ))}
+                </optgroup>
+
+              </select>
+
             </div>
           )}
 
+          {/* PILIHAN GURU */}
+
+          {jenis === "Guru" && (
+            <div className="mb-8">
+
+              <label className="mb-2 block text-sm font-bold text-slate-300">
+                Pilih Kategori Guru
+              </label>
+
+              <select
+                value={detail}
+                onChange={(e) => setDetail(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-cyan-400"
+              >
+
+                <option value="">
+                  -- Pilih kategori --
+                </option>
+
+                {pilihanGuru.map((pilihan) => (
+                  <option
+                    key={pilihan}
+                    value={pilihan}
+                  >
+                    {pilihan}
+                  </option>
+                ))}
+
+              </select>
+
+            </div>
+          )}
+
+          {/* WARGA SEKOLAH LAINNYA */}
+
+          {jenis === "Warga Sekolah Lainnya" && (
+            <div className="mb-8">
+
+              <label className="mb-3 block text-sm font-bold text-slate-300">
+                Pilih Kategori
+              </label>
+
+              <div className="grid grid-cols-2 gap-3">
+
+                {["Karyawan", "Kantin"].map(
+                  (pilihan) => {
+
+                    const aktif =
+                      detail === pilihan;
+
+                    return (
+                      <button
+                        type="button"
+                        key={pilihan}
+                        onClick={() =>
+                          setDetail(pilihan)
+                        }
+                        className={`rounded-xl border p-4 font-bold transition ${
+                          aktif
+                            ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                            : "border-slate-700 hover:border-cyan-400"
+                        }`}
+                      >
+                        {pilihan}
+
+                        {aktif && (
+                          <span className="ml-2">
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+                )}
+
+              </div>
+
+            </div>
+          )}
+
+          {/* TOMBOL */}
+
           <button
-            type="submit"
+            onClick={lanjutkan}
             disabled={loading}
-            className="w-full rounded-xl bg-cyan-400 px-4 py-3 font-bold text-black transition hover:bg-cyan-300 disabled:opacity-50"
+            className="w-full rounded-xl bg-cyan-400 px-6 py-4 font-black text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
           >
             {loading
               ? "Menyimpan..."
-              : "Mulai Screening →"}
+              : "Lanjut ke Screening →"}
           </button>
 
-        </form>
+        </div>
 
-        <p className="mt-6 text-center text-xs text-gray-600">
-          AERIS • Airborne Exposure Risk & Infection Screening System
+        <p className="mt-6 text-center text-xs text-slate-600">
+          Data digunakan untuk sistem screening AERIS.
         </p>
 
       </div>
+
     </main>
   );
 }

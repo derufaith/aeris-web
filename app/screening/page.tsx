@@ -8,89 +8,297 @@ type User = {
   id: string;
   nama: string;
   kelas: string;
-  no_hp?: string;
-  media_sosial?: string;
 };
 
 type Jawaban = {
-  [key: string]: string;
+  [key: string]: number;
 };
 
-const pertanyaan = [
+type Pertanyaan = {
+  id: string;
+  pertanyaan: string;
+  pilihan: {
+    label: string;
+    skor: number;
+  }[];
+};
+
+const pertanyaan: Pertanyaan[] = [
   {
-    id: "batuk",
-    pertanyaan: "Apakah Anda sedang mengalami batuk?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 2,
+    id: "1",
+    pertanyaan: "Saya mengalami batuk dalam 2 minggu terakhir.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
   },
   {
-    id: "durasi_batuk",
-    pertanyaan: "Jika batuk, apakah sudah berlangsung selama 2 minggu atau lebih?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 4,
+    id: "2",
+    pertanyaan: "Batuk saya berlangsung 2 minggu atau lebih.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
   },
   {
-    id: "dahak",
-    pertanyaan: "Apakah batuk disertai dahak?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 2,
+    id: "3",
+    pertanyaan: "Batuk saya terjadi berulang atau semakin sering.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
   },
   {
-    id: "darah",
-    pertanyaan: "Apakah pernah terdapat darah pada dahak?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 5,
+    id: "4",
+    pertanyaan: "Saya mengalami demam yang tidak jelas penyebabnya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Ya / sering", skor: 2 },
+    ],
   },
   {
-    id: "demam",
-    pertanyaan: "Apakah mengalami demam atau meriang tanpa sebab yang jelas?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 3,
+    id: "5",
+    pertanyaan: "Saya berkeringat pada malam hari tanpa sebab yang jelas.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
   },
   {
-    id: "keringat_malam",
+    id: "6",
+    pertanyaan: "Berat badan saya menurun secara tiba tiba.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Sedikit", skor: 1 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "7",
+    pertanyaan: "Nafsu makan saya menurun dibandingkan biasanya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "8",
+    pertanyaan: "Saya merasa lemah atau mudah lelah tanpa sebab yang jelas.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "9",
+    pertanyaan: "Saya mengalami sesak atau kesulitan bernapas.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "10",
+    pertanyaan: "Saya merasakan nyeri atau tidak nyaman di dada.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "11",
+    pertanyaan: "Saya mengeluarkan dahak ketika batuk.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "12",
     pertanyaan:
-      "Apakah sering berkeringat pada malam hari tanpa aktivitas fisik berat?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 3,
+      "Saya pernah tinggal serumah dengan seseorang yang menderita TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
   },
   {
-    id: "berat_badan",
-    pertanyaan: "Apakah mengalami penurunan berat badan tanpa sebab yang jelas?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 4,
-  },
-  {
-    id: "nafsu_makan",
-    pertanyaan: "Apakah mengalami penurunan nafsu makan?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 2,
-  },
-  {
-    id: "lelah",
-    pertanyaan: "Apakah sering merasa lemah atau sangat mudah lelah?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 2,
-  },
-  {
-    id: "sesak",
-    pertanyaan: "Apakah mengalami sesak napas?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 2,
-  },
-  {
-    id: "nyeri_dada",
+    id: "13",
     pertanyaan:
-      "Apakah mengalami nyeri dada, terutama ketika bernapas atau batuk?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 2,
+      "Saya pernah melakukan kontak erat dengan penderita TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
   },
   {
-    id: "kontak_tbc",
+    id: "14",
     pertanyaan:
-      "Apakah pernah melakukan kontak erat dengan seseorang yang didiagnosis TBC?",
-    pilihan: ["Tidak", "Ya"],
-    bobot: 4,
+      "Ada anggota keluarga saya yang pernah menjalani pengobatan TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "15",
+    pertanyaan:
+      "Saya pernah berada dalam lingkungan yang diketahui memiliki kasus TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "16",
+    pertanyaan: "Saya pernah didiagnosis TBC sebelumnya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "17",
+    pertanyaan:
+      "Saya pernah menjalani pemeriksaan karena dicurigai TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "18",
+    pertanyaan: "Saya pernah mendapatkan pengobatan TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "19",
+    pertanyaan:
+      "Saya mengetahui adanya riwayat kontak TBC dalam lingkungan tempat tinggal saya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "20",
+    pertanyaan:
+      "Ruang kelas memiliki ventilasi atau jendela yang memadai.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Sebagian", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "21",
+    pertanyaan: "Udara di ruang kelas dapat bersirkulasi dengan baik.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "22",
+    pertanyaan: "Ruang kelas sering terasa pengap.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "23",
+    pertanyaan:
+      "Jumlah siswa dalam ruang kelas terasa terlalu padat.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "24",
+    pertanyaan:
+      "Ada ruangan sekolah yang jarang mendapatkan udara segar.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "25",
+    pertanyaan:
+      "Saya mengetahui etika batuk dan bersin yang benar.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Sebagian", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "26",
+    pertanyaan:
+      "Saya menutup mulut dan hidung ketika batuk atau bersin.",
+    pilihan: [
+      { label: "Selalu", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "27",
+    pertanyaan:
+      "Saya menghindari kontak dekat ketika sedang mengalami batuk atau gejala pernapasan.",
+    pilihan: [
+      { label: "Selalu", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "28",
+    pertanyaan:
+      "Saya mengetahui kepada siapa harus melapor apabila mengalami gejala TBC.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Kurang tahu", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "29",
+    pertanyaan:
+      "Sekolah memiliki mekanisme untuk melaporkan warga sekolah yang mengalami gejala penyakit menular.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Kurang tahu", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "30",
+    pertanyaan:
+      "Saya pernah mendapatkan edukasi mengenai pencegahan TBC di sekolah.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Pernah tetapi lupa", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
   },
 ];
 
@@ -115,64 +323,84 @@ export default function ScreeningPage() {
     }
 
     try {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+
+      setUser({
+        id: parsedUser.id,
+        nama: parsedUser.nama,
+        kelas: parsedUser.kelas,
+      });
     } catch {
       localStorage.removeItem("aeris_user");
       router.replace("/identitas");
     }
   }, [router]);
 
-  function pilihJawaban(value: string) {
+  function pilihJawaban(skor: number) {
     setJawaban((prev) => ({
       ...prev,
-      [pertanyaan[current].id]: value,
+      [pertanyaan[current].id]: skor,
     }));
   }
 
-  function hitungIndeks() {
-    let total = 0;
-    let maksimum = 0;
-
-    pertanyaan.forEach((item) => {
-      maksimum += item.bobot;
-
-      if (jawaban[item.id] === "Ya") {
-        total += item.bobot;
-      }
-    });
-
-    return Math.round((total / maksimum) * 100);
+  function hitungSkor() {
+    return pertanyaan.reduce((total, item) => {
+      return total + (jawaban[item.id] ?? 0);
+    }, 0);
   }
 
-  function tentukanKategori(indeks: number) {
-    if (indeks < 25) {
+  function tentukanHasil(skor: number) {
+    /*
+      Skor maksimal = 60
+
+      0–12   = Rendah
+      13–24  = Sedang
+      25–36  = Tinggi
+      37–60  = Sangat Tinggi
+    */
+
+    // Red flag utama
+    const batuk2Minggu = jawaban["2"] === 2;
+    const kontakTBC =
+      jawaban["12"] === 2 ||
+      jawaban["13"] === 2;
+
+    if (batuk2Minggu || kontakTBC) {
       return {
-        kategori: "Indeks Gejala Rendah",
+        kategori: "Prioritas Tindak Lanjut",
         catatan:
-          "Tidak ditemukan banyak gejala yang teridentifikasi dalam skrining ini.",
+          "Terdapat indikator penting yang perlu diperhatikan dan disarankan untuk dikonsultasikan kepada tenaga kesehatan.",
       };
     }
 
-    if (indeks < 50) {
+    if (skor <= 12) {
+      return {
+        kategori: "Indeks Risiko Rendah",
+        catatan:
+          "Indikator risiko yang teridentifikasi relatif sedikit. Tetap jaga kesehatan dan lingkungan sekolah.",
+      };
+    }
+
+    if (skor <= 24) {
       return {
         kategori: "Perlu Perhatian",
         catatan:
-          "Terdapat beberapa gejala atau faktor yang perlu diperhatikan.",
+          "Terdapat beberapa indikator yang perlu diperhatikan. Disarankan meningkatkan kewaspadaan dan menerapkan perilaku pencegahan.",
       };
     }
 
-    if (indeks < 75) {
+    if (skor <= 36) {
       return {
         kategori: "Perlu Evaluasi",
         catatan:
-          "Terdapat kombinasi gejala atau faktor yang memerlukan perhatian lebih lanjut.",
+          "Terdapat cukup banyak indikator risiko. Disarankan melakukan evaluasi lebih lanjut bersama pihak UKS atau tenaga kesehatan.",
       };
     }
 
     return {
       kategori: "Prioritas Tindak Lanjut",
       catatan:
-        "Terdapat beberapa gejala atau faktor yang cukup menonjol sehingga disarankan melakukan evaluasi kesehatan lebih lanjut.",
+        "Terdapat banyak indikator risiko. Disarankan mendapatkan penilaian lebih lanjut dari tenaga kesehatan.",
     };
   }
 
@@ -190,43 +418,46 @@ export default function ScreeningPage() {
 
     setLoading(true);
 
-    const indeks = hitungIndeks();
-    const hasilKategori = tentukanKategori(indeks);
+    const skor = hitungSkor();
+    const hasilScreening = tentukanHasil(skor);
 
     const { error } = await supabase.from("screenings").insert({
       user_id: user.id,
-      hasil: hasilKategori.kategori,
-      skor: indeks,
-      indeks_gejala: indeks,
-      jawaban: jawaban,
-      kategori: hasilKategori.kategori,
-      catatan: hasilKategori.catatan,
+      hasil: hasilScreening.kategori,
+      skor: skor,
     });
 
     if (error) {
-      console.error(error);
+      console.error("Supabase error:", error);
       alert("Data screening gagal disimpan.");
       setLoading(false);
       return;
     }
 
-    setHasil(indeks);
-    setKategori(hasilKategori.kategori);
-    setCatatan(hasilKategori.catatan);
+    setHasil(skor);
+    setKategori(hasilScreening.kategori);
+    setCatatan(hasilScreening.catatan);
+
     setLoading(false);
   }
 
   if (!user) {
     return (
       <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        <p className="text-cyan-400">Memuat identitas...</p>
+        <p className="text-cyan-400">
+          Memuat identitas...
+        </p>
       </main>
     );
   }
 
+  // =========================
+  // HASIL SCREENING
+  // =========================
+
   if (hasil !== null) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6">
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6 py-10">
         <div className="w-full max-w-xl">
 
           <div className="text-center mb-8">
@@ -242,11 +473,14 @@ export default function ScreeningPage() {
           <div className="rounded-3xl border border-cyan-400/20 bg-slate-900 p-8 text-center">
 
             <p className="text-slate-400">
-              Indeks Skrining AERIS
+              Skor Skrining AERIS
             </p>
 
             <div className="my-6 text-7xl font-black text-cyan-400">
-              {hasil}%
+              {hasil}
+              <span className="text-3xl text-slate-500">
+                /60
+              </span>
             </div>
 
             <h2 className="text-2xl font-bold">
@@ -259,24 +493,26 @@ export default function ScreeningPage() {
 
             <div className="mt-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-300">
               Hasil ini merupakan skrining awal dan bukan diagnosis TBC.
-              Jika memiliki gejala yang mengkhawatirkan, konsultasikan
-              dengan tenaga kesehatan.
+              Jika memiliki gejala atau kondisi yang mengkhawatirkan,
+              konsultasikan dengan tenaga kesehatan.
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
+
               <button
                 onClick={() => router.push("/")}
-                className="rounded-xl border border-slate-700 px-5 py-3 font-bold hover:border-cyan-400"
+                className="rounded-xl border border-slate-700 px-5 py-3 font-bold hover:border-cyan-400 transition"
               >
                 Kembali ke Beranda
               </button>
 
               <button
                 onClick={() => router.push("/edukasi")}
-                className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-300"
+                className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-300 transition"
               >
                 Pelajari TBC
               </button>
+
             </div>
 
           </div>
@@ -291,9 +527,12 @@ export default function ScreeningPage() {
   }
 
   const item = pertanyaan[current];
+
   const progress = Math.round(
     ((current + 1) / pertanyaan.length) * 100
   );
+
+  const jawabanSekarang = jawaban[item.id];
 
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-10">
@@ -303,6 +542,7 @@ export default function ScreeningPage() {
         {/* HEADER */}
 
         <div className="mb-8">
+
           <p className="text-cyan-400 font-bold tracking-widest text-sm">
             AERIS SCREENING
           </p>
@@ -314,6 +554,7 @@ export default function ScreeningPage() {
           <p className="mt-3 text-slate-400">
             {user.nama} • {user.kelas}
           </p>
+
         </div>
 
         {/* PROGRESS */}
@@ -321,23 +562,31 @@ export default function ScreeningPage() {
         <div className="mb-8">
 
           <div className="flex justify-between text-sm text-slate-400 mb-2">
+
             <span>
               Pertanyaan {current + 1} dari {pertanyaan.length}
             </span>
 
-            <span>{progress}%</span>
+            <span>
+              {progress}%
+            </span>
+
           </div>
 
           <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+
             <div
               className="h-full bg-cyan-400 transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              style={{
+                width: `${progress}%`,
+              }}
             />
+
           </div>
 
         </div>
 
-        {/* QUESTION */}
+        {/* QUESTION CARD */}
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-10">
 
@@ -349,30 +598,42 @@ export default function ScreeningPage() {
             {item.pertanyaan}
           </h2>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {/* PILIHAN */}
+
+          <div className="mt-8 grid gap-4">
 
             {item.pilihan.map((pilihan) => {
-              const aktif = jawaban[item.id] === pilihan;
+
+              const aktif =
+                jawabanSekarang === pilihan.skor;
 
               return (
                 <button
-                  key={pilihan}
-                  onClick={() => pilihJawaban(pilihan)}
+                  key={pilihan.label}
+                  onClick={() =>
+                    pilihJawaban(pilihan.skor)
+                  }
                   className={`rounded-2xl border px-6 py-5 text-left font-bold transition ${
                     aktif
                       ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
                       : "border-slate-700 hover:border-cyan-400"
                   }`}
                 >
+
                   <div className="flex items-center justify-between">
-                    <span>{pilihan}</span>
+
+                    <span>
+                      {pilihan.label}
+                    </span>
 
                     {aktif && (
-                      <span className="text-cyan-400">
+                      <span className="text-cyan-400 text-xl">
                         ✓
                       </span>
                     )}
+
                   </div>
+
                 </button>
               );
             })}
@@ -385,36 +646,50 @@ export default function ScreeningPage() {
 
             <button
               onClick={() =>
-                setCurrent((prev) => Math.max(prev - 1, 0))
+                setCurrent((prev) =>
+                  Math.max(prev - 1, 0)
+                )
               }
               disabled={current === 0}
-              className="rounded-xl border border-slate-700 px-5 py-3 font-bold disabled:opacity-30"
+              className="rounded-xl border border-slate-700 px-5 py-3 font-bold disabled:opacity-30 hover:border-cyan-400 transition"
             >
               ← Kembali
             </button>
 
             {current < pertanyaan.length - 1 ? (
+
               <button
                 onClick={() => {
-                  if (!jawaban[item.id]) {
-                    alert("Pilih salah satu jawaban terlebih dahulu.");
+
+                  if (jawabanSekarang === undefined) {
+                    alert(
+                      "Pilih salah satu jawaban terlebih dahulu."
+                    );
                     return;
                   }
 
                   setCurrent((prev) => prev + 1);
                 }}
-                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300"
+                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300 transition"
               >
                 Berikutnya →
               </button>
+
             ) : (
+
               <button
                 onClick={submitScreening}
-                disabled={loading || !jawaban[item.id]}
-                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
+                disabled={
+                  loading ||
+                  jawabanSekarang === undefined
+                }
+                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300 disabled:opacity-50 transition"
               >
-                {loading ? "Menyimpan..." : "Selesai Screening ✓"}
+                {loading
+                  ? "Menyimpan..."
+                  : "Selesai Screening ✓"}
               </button>
+
             )}
 
           </div>
