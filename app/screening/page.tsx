@@ -59,36 +59,61 @@ export default function IdentitasPage() {
 
   const [loading, setLoading] = useState(false);
 
+  // =========================
+  // PILIH JENIS PENGGUNA
+  // =========================
+
   function pilihJenis(value: string) {
     setJenis(value);
+
+    // Reset detail ketika jenis berubah
     setDetail("");
   }
 
+  // =========================
+  // SIMPAN DATA
+  // =========================
+
   async function lanjutkan() {
-    // =========================
-    // VALIDASI
-    // =========================
+    // -------------------------
+    // VALIDASI NAMA
+    // -------------------------
 
     if (!nama.trim()) {
       alert("Silakan masukkan nama.");
       return;
     }
 
+    // -------------------------
+    // VALIDASI NOMOR HP
+    // -------------------------
+
     if (!noHp.trim()) {
       alert("Silakan masukkan nomor HP.");
       return;
     }
+
+    // -------------------------
+    // VALIDASI JENIS
+    // -------------------------
 
     if (!jenis) {
       alert("Silakan pilih jenis pengguna.");
       return;
     }
 
-    // Siswa dan Guru membutuhkan detail
+    // -------------------------
+    // VALIDASI KHUSUS SISWA
+    // -------------------------
+
     if (jenis === "Siswa" && !detail) {
       alert("Silakan pilih kelas.");
       return;
     }
+
+    // -------------------------
+    // VALIDASI KHUSUS GURU
+    // -------------------------
 
     if (jenis === "Guru" && !detail) {
       alert("Silakan pilih kategori guru.");
@@ -98,7 +123,7 @@ export default function IdentitasPage() {
     setLoading(true);
 
     // =========================
-    // TENTUKAN DATA DATABASE
+    // TENTUKAN KELAS / DETAIL
     // =========================
 
     let kelasDatabase = "";
@@ -111,12 +136,17 @@ export default function IdentitasPage() {
       kelasDatabase = detail;
     }
 
+    /*
+      Warga Sekolah Lainnya tidak
+      mempunyai kategori tambahan.
+    */
+
     if (jenis === "Warga Sekolah Lainnya") {
       kelasDatabase = "Warga Sekolah Lainnya";
     }
 
     // =========================
-    // SIMPAN KE SUPABASE
+    // INSERT SUPABASE
     // =========================
 
     const { data, error } = await supabase
@@ -124,17 +154,14 @@ export default function IdentitasPage() {
       .insert({
         nama: nama.trim(),
         no_hp: noHp.trim(),
-
-        // INI YANG SEBELUMNYA BELUM ADA
         jenis_pengguna: jenis,
-
         kelas: kelasDatabase,
       })
       .select()
       .single();
 
     // =========================
-    // ERROR
+    // CEK ERROR
     // =========================
 
     if (error) {
@@ -151,7 +178,7 @@ export default function IdentitasPage() {
     }
 
     // =========================
-    // SIMPAN IDENTITAS
+    // SIMPAN USER KE BROWSER
     // =========================
 
     localStorage.setItem(
@@ -173,7 +200,9 @@ export default function IdentitasPage() {
 
       <div className="w-full max-w-xl">
 
-        {/* HEADER */}
+        {/* =================================
+            HEADER
+        ================================= */}
 
         <div className="text-center mb-10">
 
@@ -191,11 +220,15 @@ export default function IdentitasPage() {
 
         </div>
 
-        {/* CARD */}
+        {/* =================================
+            CARD
+        ================================= */}
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-9">
 
-          {/* NAMA */}
+          {/* =================================
+              NAMA
+          ================================= */}
 
           <div className="mb-6">
 
@@ -208,12 +241,15 @@ export default function IdentitasPage() {
               value={nama}
               onChange={(e) => setNama(e.target.value)}
               placeholder="Masukkan nama lengkap"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
+              autoComplete="name"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white placeholder:text-slate-600 outline-none transition focus:border-cyan-400"
             />
 
           </div>
 
-          {/* NOMOR HP */}
+          {/* =================================
+              NOMOR HP
+          ================================= */}
 
           <div className="mb-8">
 
@@ -226,12 +262,16 @@ export default function IdentitasPage() {
               value={noHp}
               onChange={(e) => setNoHp(e.target.value)}
               placeholder="Contoh: 081234567890"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
+              inputMode="tel"
+              autoComplete="tel"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white placeholder:text-slate-600 outline-none transition focus:border-cyan-400"
             />
 
           </div>
 
-          {/* JENIS PENGGUNA */}
+          {/* =================================
+              JENIS PENGGUNA
+          ================================= */}
 
           <div className="mb-8">
 
@@ -241,21 +281,21 @@ export default function IdentitasPage() {
 
             <div className="grid gap-3">
 
-              {/* =====================
+              {/* =================================
                   SISWA
-              ====================== */}
+              ================================= */}
 
               <button
                 type="button"
                 onClick={() => pilihJenis("Siswa")}
-                className={`rounded-2xl border p-5 text-left transition ${
+                className={`w-full rounded-2xl border p-5 text-left transition ${
                   jenis === "Siswa"
                     ? "border-cyan-400 bg-cyan-400/10"
                     : "border-slate-700 hover:border-cyan-400"
                 }`}
               >
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
 
                   <div>
 
@@ -270,7 +310,7 @@ export default function IdentitasPage() {
                   </div>
 
                   {jenis === "Siswa" && (
-                    <span className="text-2xl text-cyan-400">
+                    <span className="shrink-0 text-2xl text-cyan-400">
                       ✓
                     </span>
                   )}
@@ -279,21 +319,21 @@ export default function IdentitasPage() {
 
               </button>
 
-              {/* =====================
+              {/* =================================
                   GURU
-              ====================== */}
+              ================================= */}
 
               <button
                 type="button"
                 onClick={() => pilihJenis("Guru")}
-                className={`rounded-2xl border p-5 text-left transition ${
+                className={`w-full rounded-2xl border p-5 text-left transition ${
                   jenis === "Guru"
                     ? "border-cyan-400 bg-cyan-400/10"
                     : "border-slate-700 hover:border-cyan-400"
                 }`}
               >
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
 
                   <div>
 
@@ -308,7 +348,7 @@ export default function IdentitasPage() {
                   </div>
 
                   {jenis === "Guru" && (
-                    <span className="text-2xl text-cyan-400">
+                    <span className="shrink-0 text-2xl text-cyan-400">
                       ✓
                     </span>
                   )}
@@ -317,23 +357,23 @@ export default function IdentitasPage() {
 
               </button>
 
-              {/* =====================
+              {/* =================================
                   WARGA SEKOLAH LAINNYA
-              ====================== */}
+              ================================= */}
 
               <button
                 type="button"
                 onClick={() =>
                   pilihJenis("Warga Sekolah Lainnya")
                 }
-                className={`rounded-2xl border p-5 text-left transition ${
+                className={`w-full rounded-2xl border p-5 text-left transition ${
                   jenis === "Warga Sekolah Lainnya"
                     ? "border-cyan-400 bg-cyan-400/10"
                     : "border-slate-700 hover:border-cyan-400"
                 }`}
               >
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
 
                   <div>
 
@@ -341,7 +381,7 @@ export default function IdentitasPage() {
                       3. Warga Sekolah Lainnya
                     </p>
 
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm leading-5 text-slate-500">
                       (petugas kebersihan, penjaga keamanan,
                       petugas kantin, dll)
                     </p>
@@ -349,7 +389,7 @@ export default function IdentitasPage() {
                   </div>
 
                   {jenis === "Warga Sekolah Lainnya" && (
-                    <span className="text-2xl text-cyan-400">
+                    <span className="shrink-0 text-2xl text-cyan-400">
                       ✓
                     </span>
                   )}
@@ -362,9 +402,9 @@ export default function IdentitasPage() {
 
           </div>
 
-          {/* =====================
-              PILIHAN SISWA
-          ====================== */}
+          {/* =================================
+              PILIHAN KELAS SISWA
+          ================================= */}
 
           {jenis === "Siswa" && (
             <div className="mb-8">
@@ -376,12 +416,14 @@ export default function IdentitasPage() {
               <select
                 value={detail}
                 onChange={(e) => setDetail(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-cyan-400"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
               >
 
                 <option value="">
                   -- Pilih kelas --
                 </option>
+
+                {/* KELAS X */}
 
                 <optgroup label="Kelas X">
 
@@ -400,6 +442,8 @@ export default function IdentitasPage() {
 
                 </optgroup>
 
+                {/* KELAS XI */}
+
                 <optgroup label="Kelas XI">
 
                   {kelasSiswa
@@ -416,6 +460,8 @@ export default function IdentitasPage() {
                     ))}
 
                 </optgroup>
+
+                {/* KELAS XII */}
 
                 <optgroup label="Kelas XII">
 
@@ -439,9 +485,9 @@ export default function IdentitasPage() {
             </div>
           )}
 
-          {/* =====================
+          {/* =================================
               PILIHAN GURU
-          ====================== */}
+          ================================= */}
 
           {jenis === "Guru" && (
             <div className="mb-8">
@@ -453,7 +499,7 @@ export default function IdentitasPage() {
               <select
                 value={detail}
                 onChange={(e) => setDetail(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-cyan-400"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
               >
 
                 <option value="">
@@ -474,38 +520,20 @@ export default function IdentitasPage() {
             </div>
           )}
 
-          {/* =====================
+          {/* =================================
+              TIDAK ADA BLOK APAPUN UNTUK
               WARGA SEKOLAH LAINNYA
-          ====================== */}
+          ================================= */}
 
-          {jenis === "Warga Sekolah Lainnya" && (
-            <div className="mb-8">
-
-              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-5">
-
-                <p className="font-bold text-cyan-400">
-                  Warga Sekolah Lainnya
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Kategori ini mencakup petugas kebersihan,
-                  penjaga keamanan, petugas kantin, dan
-                  warga sekolah lainnya.
-                </p>
-
-              </div>
-
-            </div>
-          )}
-
-          {/* =====================
-              TOMBOL
-          ====================== */}
+          {/* =================================
+              TOMBOL LANJUT
+          ================================= */}
 
           <button
+            type="button"
             onClick={lanjutkan}
             disabled={loading}
-            className="w-full rounded-xl bg-cyan-400 px-6 py-4 font-black text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
+            className="w-full rounded-xl bg-cyan-400 px-6 py-4 font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
 
             {loading
@@ -515,6 +543,10 @@ export default function IdentitasPage() {
           </button>
 
         </div>
+
+        {/* =================================
+            FOOTER
+        ================================= */}
 
         <p className="mt-6 text-center text-xs text-slate-600">
           Data digunakan untuk sistem screening AERIS.
