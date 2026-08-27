@@ -204,7 +204,7 @@ const pertanyaan: Pertanyaan[] = [
   },
   {
     id: "21",
-    pertanyaan: "Udara di ruang kelas dapat bersirkulasi dengan baik.",
+    pertanyaan: "Udara di ruang kelas/ruang kerja dapat bersirkulasi dengan baik.",
     pilihan: [
       { label: "Ya", skor: 0 },
       { label: "Kadang", skor: 1 },
@@ -233,11 +233,11 @@ const pertanyaan: Pertanyaan[] = [
   {
     id: "24",
     pertanyaan:
-      "Ada ruangan sekolah yang jarang mendapatkan udara segar.",
+      "Ada ruangan sekolah/ruang kerja yang jarang mendapatkan udara segar.",
     pilihan: [
-      { label: "Tidak", skor: 0 },
-      { label: "Kadang", skor: 1 },
-      { label: "Sering", skor: 2 },
+      { label: "Tidak tau", skor: 0 },
+      { label: "Tidak", skor: 1 },
+      { label: "Ada", skor: 2 },
     ],
   },
   {
