@@ -1,555 +1,741 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
-const kelasSiswa = [
-  "X-E1",
-  "X-E2",
-  "X-E3",
-  "X-E4",
-  "X-E5",
-  "X-E6",
-  "X-E7",
-  "X-E8",
-  "X-E9",
-  "X-E10",
-  "X-E11",
+type User = {
+  id: string;
+  nama: string;
+  kelas: string;
+};
 
-  "XI-F1",
-  "XI-F2",
-  "XI-F3",
-  "XI-F4",
-  "XI-F5",
-  "XI-F6",
-  "XI-F7",
-  "XI-F8",
-  "XI-F9",
-  "XI-F10",
-  "XI-F11",
+type Jawaban = {
+  [key: string]: number;
+};
 
-  "XII-F1",
-  "XII-F2",
-  "XII-F3",
-  "XII-F4",
-  "XII-F5",
-  "XII-F6",
-  "XII-F7",
-  "XII-F8",
-  "XII-F9",
-  "XII-F10",
-  "XII-F11",
+type Pilihan = {
+  label: string;
+  skor: number;
+};
+
+type Pertanyaan = {
+  id: string;
+  pertanyaan: string;
+  pilihan: Pilihan[];
+};
+
+const pertanyaan: Pertanyaan[] = [
+  {
+    id: "1",
+    pertanyaan: "Saya mengalami batuk dalam 2 minggu terakhir.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "2",
+    pertanyaan: "Batuk saya berlangsung 2 minggu atau lebih.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "3",
+    pertanyaan: "Batuk saya terjadi berulang atau semakin sering.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "4",
+    pertanyaan: "Saya mengalami demam yang tidak jelas penyebabnya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Ya / sering", skor: 2 },
+    ],
+  },
+  {
+    id: "5",
+    pertanyaan: "Saya berkeringat pada malam hari tanpa sebab yang jelas.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "6",
+    pertanyaan: "Berat badan saya menurun secara tiba-tiba.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Sedikit", skor: 1 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "7",
+    pertanyaan: "Nafsu makan saya menurun dibandingkan biasanya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "8",
+    pertanyaan: "Saya merasa lemah atau mudah lelah tanpa sebab yang jelas.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "9",
+    pertanyaan: "Saya mengalami sesak atau kesulitan bernapas.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "10",
+    pertanyaan: "Saya merasakan nyeri atau tidak nyaman di dada.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "11",
+    pertanyaan: "Saya mengeluarkan dahak ketika batuk.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "12",
+    pertanyaan:
+      "Saya pernah tinggal serumah dengan seseorang yang menderita TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "13",
+    pertanyaan:
+      "Saya pernah melakukan kontak erat dengan penderita TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "14",
+    pertanyaan:
+      "Ada anggota keluarga saya yang pernah menjalani pengobatan TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "15",
+    pertanyaan:
+      "Saya pernah berada dalam lingkungan yang diketahui memiliki kasus TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "16",
+    pertanyaan: "Saya pernah didiagnosis TBC sebelumnya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "17",
+    pertanyaan:
+      "Saya pernah menjalani pemeriksaan karena dicurigai TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "18",
+    pertanyaan: "Saya pernah mendapatkan pengobatan TBC.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "19",
+    pertanyaan:
+      "Saya mengetahui adanya riwayat kontak TBC dalam lingkungan tempat tinggal saya.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Ya", skor: 2 },
+    ],
+  },
+  {
+    id: "20",
+    pertanyaan:
+      "Ruang kelas memiliki ventilasi atau jendela yang memadai.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Sebagian", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "21",
+    pertanyaan:
+      "Udara di ruang kelas/ruang kerja dapat bersirkulasi dengan baik.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "22",
+    pertanyaan: "Ruang kelas sering terasa pengap.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "23",
+    pertanyaan:
+      "Jumlah siswa dalam ruang kelas terasa terlalu padat.",
+    pilihan: [
+      { label: "Tidak", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Sering", skor: 2 },
+    ],
+  },
+  {
+    id: "24",
+    pertanyaan:
+      "Ada ruangan sekolah/ruang kerja yang jarang mendapatkan udara segar.",
+    pilihan: [
+      { label: "Tidak tahu", skor: 0 },
+      { label: "Tidak", skor: 1 },
+      { label: "Ada", skor: 2 },
+    ],
+  },
+  {
+    id: "25",
+    pertanyaan:
+      "Saya mengetahui etika batuk dan bersin yang benar.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Sebagian", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "26",
+    pertanyaan:
+      "Saya menutup mulut dan hidung ketika batuk atau bersin.",
+    pilihan: [
+      { label: "Selalu", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "27",
+    pertanyaan:
+      "Saya menghindari kontak dekat ketika sedang mengalami batuk atau gejala pernapasan.",
+    pilihan: [
+      { label: "Selalu", skor: 0 },
+      { label: "Kadang", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "28",
+    pertanyaan:
+      "Saya mengetahui kepada siapa harus melapor apabila mengalami gejala TBC.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Kurang tahu", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "29",
+    pertanyaan:
+      "Sekolah memiliki mekanisme untuk melaporkan warga sekolah yang mengalami gejala penyakit menular.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Kurang tahu", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
+  {
+    id: "30",
+    pertanyaan:
+      "Saya pernah mendapatkan edukasi mengenai pencegahan TBC di sekolah.",
+    pilihan: [
+      { label: "Ya", skor: 0 },
+      { label: "Pernah tetapi lupa", skor: 1 },
+      { label: "Tidak", skor: 2 },
+    ],
+  },
 ];
 
-const pilihanGuru = [
-  "Tenaga Pendidik",
-  "Tenaga Administrasi",
-  "Rumpun Pendidik",
-];
-
-export default function IdentitasPage() {
+export default function ScreeningPage() {
   const router = useRouter();
 
-  const [nama, setNama] = useState("");
-  const [noHp, setNoHp] = useState("");
-
-  const [jenis, setJenis] = useState("");
-  const [detail, setDetail] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const [jawaban, setJawaban] = useState<Jawaban>({});
+  const [current, setCurrent] = useState(0);
 
   const [loading, setLoading] = useState(false);
 
+  const [hasil, setHasil] = useState<number | null>(null);
+  const [kategori, setKategori] = useState("");
+  const [catatan, setCatatan] = useState("");
+
   // =========================
-  // PILIH JENIS PENGGUNA
+  // LOAD IDENTITAS
   // =========================
 
-  function pilihJenis(value: string) {
-    setJenis(value);
+  useEffect(() => {
+    const savedUser = localStorage.getItem("aeris_user");
 
-    // Reset detail ketika jenis berubah
-    setDetail("");
+    if (!savedUser) {
+      router.replace("/identitas");
+      return;
+    }
+
+    try {
+      const parsedUser = JSON.parse(savedUser);
+
+      setUser({
+        id: parsedUser.id,
+        nama: parsedUser.nama,
+        kelas: parsedUser.kelas,
+      });
+    } catch {
+      localStorage.removeItem("aeris_user");
+      router.replace("/identitas");
+    }
+  }, [router]);
+
+  // =========================
+  // PILIH JAWABAN
+  // =========================
+
+  function pilihJawaban(skor: number) {
+    const id = pertanyaan[current].id;
+
+    setJawaban((prev) => ({
+      ...prev,
+      [id]: skor,
+    }));
   }
 
   // =========================
-  // SIMPAN DATA
+  // HITUNG SKOR
   // =========================
 
-  async function lanjutkan() {
-    // -------------------------
-    // VALIDASI NAMA
-    // -------------------------
+  function hitungSkor() {
+    return pertanyaan.reduce((total, item) => {
+      return total + (jawaban[item.id] ?? 0);
+    }, 0);
+  }
 
-    if (!nama.trim()) {
-      alert("Silakan masukkan nama.");
-      return;
+  // =========================
+  // TENTUKAN HASIL
+  // =========================
+
+  function tentukanHasil(skor: number) {
+    const batuk2Minggu = jawaban["2"] === 2;
+
+    const kontakTBC =
+      jawaban["12"] === 2 ||
+      jawaban["13"] === 2;
+
+    if (batuk2Minggu || kontakTBC) {
+      return {
+        kategori: "Prioritas Tindak Lanjut",
+        catatan:
+          "Terdapat indikator penting yang perlu diperhatikan. Disarankan berkonsultasi dengan tenaga kesehatan.",
+      };
     }
 
-    // -------------------------
-    // VALIDASI NOMOR HP
-    // -------------------------
-
-    if (!noHp.trim()) {
-      alert("Silakan masukkan nomor HP.");
-      return;
+    if (skor <= 12) {
+      return {
+        kategori: "Indeks Risiko Rendah",
+        catatan:
+          "Indikator risiko yang teridentifikasi relatif sedikit. Tetap jaga kesehatan dan lingkungan sekolah.",
+      };
     }
 
-    // -------------------------
-    // VALIDASI JENIS
-    // -------------------------
-
-    if (!jenis) {
-      alert("Silakan pilih jenis pengguna.");
-      return;
+    if (skor <= 24) {
+      return {
+        kategori: "Perlu Perhatian",
+        catatan:
+          "Terdapat beberapa indikator yang perlu diperhatikan. Tingkatkan kewaspadaan dan perilaku pencegahan.",
+      };
     }
 
-    // -------------------------
-    // VALIDASI KHUSUS SISWA
-    // -------------------------
-
-    if (jenis === "Siswa" && !detail) {
-      alert("Silakan pilih kelas.");
-      return;
+    if (skor <= 36) {
+      return {
+        kategori: "Perlu Evaluasi",
+        catatan:
+          "Terdapat cukup banyak indikator risiko. Disarankan melakukan evaluasi lebih lanjut bersama pihak UKS atau tenaga kesehatan.",
+      };
     }
 
-    // -------------------------
-    // VALIDASI KHUSUS GURU
-    // -------------------------
+    return {
+      kategori: "Prioritas Tindak Lanjut",
+      catatan:
+        "Terdapat banyak indikator risiko. Disarankan mendapatkan penilaian lebih lanjut dari tenaga kesehatan.",
+    };
+  }
 
-    if (jenis === "Guru" && !detail) {
-      alert("Silakan pilih kategori guru.");
+  // =========================
+  // SIMPAN SCREENING
+  // =========================
+
+  async function submitScreening() {
+    if (!user) return;
+
+    const semuaTerjawab = pertanyaan.every(
+      (item) => jawaban[item.id] !== undefined
+    );
+
+    if (!semuaTerjawab) {
+      alert("Mohon jawab seluruh pertanyaan terlebih dahulu.");
       return;
     }
 
     setLoading(true);
 
-    // =========================
-    // TENTUKAN KELAS / DETAIL
-    // =========================
+    const skor = hitungSkor();
+    const hasilScreening = tentukanHasil(skor);
 
-    let kelasDatabase = "";
-
-    if (jenis === "Siswa") {
-      kelasDatabase = detail;
-    }
-
-    if (jenis === "Guru") {
-      kelasDatabase = detail;
-    }
-
-    /*
-      Warga Sekolah Lainnya tidak
-      mempunyai kategori tambahan.
-    */
-
-    if (jenis === "Warga Sekolah Lainnya") {
-      kelasDatabase = "Warga Sekolah Lainnya";
-    }
-
-    // =========================
-    // INSERT SUPABASE
-    // =========================
-
-    const { data, error } = await supabase
-      .from("users")
+    const { error } = await supabase
+      .from("screenings")
       .insert({
-        nama: nama.trim(),
-        no_hp: noHp.trim(),
-        jenis_pengguna: jenis,
-        kelas: kelasDatabase,
-      })
-      .select()
-      .single();
-
-    // =========================
-    // CEK ERROR
-    // =========================
+        user_id: user.id,
+        hasil: hasilScreening.kategori,
+        skor: skor,
+      });
 
     if (error) {
       console.error("SUPABASE ERROR:", error);
 
       alert(
-        `Gagal menyimpan data:\n\n${error.message}\n\nKode: ${
-          error.code ?? "-"
-        }`
+        `Data screening gagal disimpan.\n\n${error.message}`
       );
 
       setLoading(false);
       return;
     }
 
-    // =========================
-    // SIMPAN USER KE BROWSER
-    // =========================
-
-    localStorage.setItem(
-      "aeris_user",
-      JSON.stringify(data)
-    );
+    setHasil(skor);
+    setKategori(hasilScreening.kategori);
+    setCatatan(hasilScreening.catatan);
 
     setLoading(false);
-
-    // =========================
-    // MASUK SCREENING
-    // =========================
-
-    router.push("/screening");
   }
 
-  return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-10 flex items-center justify-center">
+  // =========================
+  // LOADING
+  // =========================
 
-      <div className="w-full max-w-xl">
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <p className="text-cyan-400 font-bold">
+          Memuat identitas...
+        </p>
+      </main>
+    );
+  }
 
-        {/* =================================
-            HEADER
-        ================================= */}
+  // =========================
+  // HASIL SCREENING
+  // =========================
 
-        <div className="text-center mb-10">
+  if (hasil !== null) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white px-6 py-10 flex items-center justify-center">
+        <div className="w-full max-w-xl">
 
-          <p className="text-cyan-400 font-bold tracking-[0.3em] text-sm">
-            AERIS
+          <div className="text-center mb-8">
+            <p className="text-cyan-400 font-bold tracking-[0.25em] text-sm">
+              AERIS SCREENING
+            </p>
+
+            <h1 className="mt-3 text-4xl font-black">
+              Hasil Skrining
+            </h1>
+          </div>
+
+          <div className="rounded-3xl border border-cyan-400/20 bg-slate-900 p-8 text-center">
+
+            <p className="text-slate-400">
+              Skor Skrining AERIS
+            </p>
+
+            <div className="my-6 text-7xl font-black text-cyan-400">
+              {hasil}
+              <span className="text-3xl text-slate-500">
+                /60
+              </span>
+            </div>
+
+            <h2 className="text-2xl font-black">
+              {kategori}
+            </h2>
+
+            <p className="mt-4 leading-7 text-slate-400">
+              {catatan}
+            </p>
+
+            <div className="mt-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm leading-6 text-yellow-300">
+              Hasil ini merupakan skrining awal dan bukan diagnosis TBC.
+              Jika memiliki gejala atau kondisi yang mengkhawatirkan,
+              konsultasikan dengan tenaga kesehatan.
+            </div>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="rounded-xl border border-slate-700 px-5 py-3 font-bold transition hover:border-cyan-400"
+              >
+                Kembali ke Beranda
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/edukasi")}
+                className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
+              >
+                Pelajari TBC
+              </button>
+
+            </div>
+
+          </div>
+
+          <p className="mt-6 text-center text-xs text-slate-600">
+            Data screening telah disimpan ke sistem AERIS.
           </p>
 
-          <h1 className="mt-3 text-4xl font-black">
-            Identitas Pengguna
+        </div>
+      </main>
+    );
+  }
+
+  // =========================
+  // SCREENING
+  // =========================
+
+  const item = pertanyaan[current];
+
+  const jawabanSekarang = jawaban[item.id];
+
+  const progress = Math.round(
+    ((current + 1) / pertanyaan.length) * 100
+  );
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-white px-6 py-10">
+
+      <div className="mx-auto max-w-3xl">
+
+        {/* HEADER */}
+
+        <div className="mb-8">
+
+          <p className="text-cyan-400 font-bold tracking-[0.2em] text-sm">
+            AERIS SCREENING
+          </p>
+
+          <h1 className="mt-2 text-3xl font-black">
+            Skrining Gejala & Faktor Risiko
           </h1>
 
           <p className="mt-3 text-slate-400">
-            Lengkapi data sebelum memulai screening.
+            {user.nama} • {user.kelas}
           </p>
 
         </div>
 
-        {/* =================================
-            CARD
-        ================================= */}
+        {/* PROGRESS */}
 
-        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-9">
+        <div className="mb-8">
 
-          {/* =================================
-              NAMA
-          ================================= */}
+          <div className="mb-2 flex justify-between text-sm text-slate-400">
 
-          <div className="mb-6">
+            <span>
+              Pertanyaan {current + 1} dari {pertanyaan.length}
+            </span>
 
-            <label className="mb-2 block text-sm font-bold text-slate-300">
-              Nama Lengkap
-            </label>
+            <span>
+              {progress}%
+            </span>
 
-            <input
-              type="text"
-              value={nama}
-              onChange={(e) => setNama(e.target.value)}
-              placeholder="Masukkan nama lengkap"
-              autoComplete="name"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white placeholder:text-slate-600 outline-none transition focus:border-cyan-400"
+          </div>
+
+          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+
+            <div
+              className="h-full bg-cyan-400 transition-all duration-300"
+              style={{
+                width: `${progress}%`,
+              }}
             />
 
           </div>
-
-          {/* =================================
-              NOMOR HP
-          ================================= */}
-
-          <div className="mb-8">
-
-            <label className="mb-2 block text-sm font-bold text-slate-300">
-              Nomor HP
-            </label>
-
-            <input
-              type="tel"
-              value={noHp}
-              onChange={(e) => setNoHp(e.target.value)}
-              placeholder="Contoh: 081234567890"
-              inputMode="tel"
-              autoComplete="tel"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white placeholder:text-slate-600 outline-none transition focus:border-cyan-400"
-            />
-
-          </div>
-
-          {/* =================================
-              JENIS PENGGUNA
-          ================================= */}
-
-          <div className="mb-8">
-
-            <label className="mb-3 block text-sm font-bold text-slate-300">
-              Anda adalah
-            </label>
-
-            <div className="grid gap-3">
-
-              {/* =================================
-                  SISWA
-              ================================= */}
-
-              <button
-                type="button"
-                onClick={() => pilihJenis("Siswa")}
-                className={`w-full rounded-2xl border p-5 text-left transition ${
-                  jenis === "Siswa"
-                    ? "border-cyan-400 bg-cyan-400/10"
-                    : "border-slate-700 hover:border-cyan-400"
-                }`}
-              >
-
-                <div className="flex items-center justify-between gap-4">
-
-                  <div>
-
-                    <p className="text-lg font-bold">
-                      1. Siswa
-                    </p>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Peserta didik SMA Negeri 3 Cilacap
-                    </p>
-
-                  </div>
-
-                  {jenis === "Siswa" && (
-                    <span className="shrink-0 text-2xl text-cyan-400">
-                      ✓
-                    </span>
-                  )}
-
-                </div>
-
-              </button>
-
-              {/* =================================
-                  GURU
-              ================================= */}
-
-              <button
-                type="button"
-                onClick={() => pilihJenis("Guru")}
-                className={`w-full rounded-2xl border p-5 text-left transition ${
-                  jenis === "Guru"
-                    ? "border-cyan-400 bg-cyan-400/10"
-                    : "border-slate-700 hover:border-cyan-400"
-                }`}
-              >
-
-                <div className="flex items-center justify-between gap-4">
-
-                  <div>
-
-                    <p className="text-lg font-bold">
-                      2. Guru
-                    </p>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Tenaga pendidik dan administrasi
-                    </p>
-
-                  </div>
-
-                  {jenis === "Guru" && (
-                    <span className="shrink-0 text-2xl text-cyan-400">
-                      ✓
-                    </span>
-                  )}
-
-                </div>
-
-              </button>
-
-              {/* =================================
-                  WARGA SEKOLAH LAINNYA
-              ================================= */}
-
-              <button
-                type="button"
-                onClick={() =>
-                  pilihJenis("Warga Sekolah Lainnya")
-                }
-                className={`w-full rounded-2xl border p-5 text-left transition ${
-                  jenis === "Warga Sekolah Lainnya"
-                    ? "border-cyan-400 bg-cyan-400/10"
-                    : "border-slate-700 hover:border-cyan-400"
-                }`}
-              >
-
-                <div className="flex items-center justify-between gap-4">
-
-                  <div>
-
-                    <p className="text-lg font-bold">
-                      3. Warga Sekolah Lainnya
-                    </p>
-
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
-                      (petugas kebersihan, penjaga keamanan,
-                      petugas kantin, dll)
-                    </p>
-
-                  </div>
-
-                  {jenis === "Warga Sekolah Lainnya" && (
-                    <span className="shrink-0 text-2xl text-cyan-400">
-                      ✓
-                    </span>
-                  )}
-
-                </div>
-
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* =================================
-              PILIHAN KELAS SISWA
-          ================================= */}
-
-          {jenis === "Siswa" && (
-            <div className="mb-8">
-
-              <label className="mb-2 block text-sm font-bold text-slate-300">
-                Pilih Kelas
-              </label>
-
-              <select
-                value={detail}
-                onChange={(e) => setDetail(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
-              >
-
-                <option value="">
-                  -- Pilih kelas --
-                </option>
-
-                {/* KELAS X */}
-
-                <optgroup label="Kelas X">
-
-                  {kelasSiswa
-                    .filter((kelas) =>
-                      kelas.startsWith("X-")
-                    )
-                    .map((kelas) => (
-                      <option
-                        key={kelas}
-                        value={kelas}
-                      >
-                        {kelas}
-                      </option>
-                    ))}
-
-                </optgroup>
-
-                {/* KELAS XI */}
-
-                <optgroup label="Kelas XI">
-
-                  {kelasSiswa
-                    .filter((kelas) =>
-                      kelas.startsWith("XI-")
-                    )
-                    .map((kelas) => (
-                      <option
-                        key={kelas}
-                        value={kelas}
-                      >
-                        {kelas}
-                      </option>
-                    ))}
-
-                </optgroup>
-
-                {/* KELAS XII */}
-
-                <optgroup label="Kelas XII">
-
-                  {kelasSiswa
-                    .filter((kelas) =>
-                      kelas.startsWith("XII-")
-                    )
-                    .map((kelas) => (
-                      <option
-                        key={kelas}
-                        value={kelas}
-                      >
-                        {kelas}
-                      </option>
-                    ))}
-
-                </optgroup>
-
-              </select>
-
-            </div>
-          )}
-
-          {/* =================================
-              PILIHAN GURU
-          ================================= */}
-
-          {jenis === "Guru" && (
-            <div className="mb-8">
-
-              <label className="mb-2 block text-sm font-bold text-slate-300">
-                Pilih Kategori Guru
-              </label>
-
-              <select
-                value={detail}
-                onChange={(e) => setDetail(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-cyan-400"
-              >
-
-                <option value="">
-                  -- Pilih kategori --
-                </option>
-
-                {pilihanGuru.map((pilihan) => (
-                  <option
-                    key={pilihan}
-                    value={pilihan}
-                  >
-                    {pilihan}
-                  </option>
-                ))}
-
-              </select>
-
-            </div>
-          )}
-
-          {/* =================================
-              TIDAK ADA BLOK APAPUN UNTUK
-              WARGA SEKOLAH LAINNYA
-          ================================= */}
-
-          {/* =================================
-              TOMBOL LANJUT
-          ================================= */}
-
-          <button
-            type="button"
-            onClick={lanjutkan}
-            disabled={loading}
-            className="w-full rounded-xl bg-cyan-400 px-6 py-4 font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-
-            {loading
-              ? "Menyimpan..."
-              : "Lanjut ke Screening →"}
-
-          </button>
 
         </div>
 
-        {/* =================================
-            FOOTER
-        ================================= */}
+        {/* QUESTION CARD */}
+
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-10">
+
+          <p className="text-sm font-bold text-cyan-400">
+            PERTANYAAN {current + 1}
+          </p>
+
+          <h2 className="mt-4 text-2xl font-bold leading-relaxed">
+            {item.pertanyaan}
+          </h2>
+
+          {/* PILIHAN */}
+
+          <div className="mt-8 grid gap-4">
+
+            {item.pilihan.map((pilihan) => {
+
+              const aktif =
+                jawabanSekarang === pilihan.skor;
+
+              return (
+                <button
+                  type="button"
+                  key={pilihan.label}
+                  onClick={() =>
+                    pilihJawaban(pilihan.skor)
+                  }
+                  className={`w-full rounded-2xl border px-6 py-5 text-left font-bold transition ${
+                    aktif
+                      ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                      : "border-slate-700 hover:border-cyan-400"
+                  }`}
+                >
+
+                  <div className="flex items-center justify-between">
+
+                    <span>
+                      {pilihan.label}
+                    </span>
+
+                    {aktif && (
+                      <span className="text-xl text-cyan-400">
+                        ✓
+                      </span>
+                    )}
+
+                  </div>
+
+                </button>
+              );
+            })}
+
+          </div>
+
+          {/* NAVIGATION */}
+
+          <div className="mt-10 flex justify-between gap-4">
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrent((prev) =>
+                  Math.max(prev - 1, 0)
+                )
+              }
+              disabled={current === 0}
+              className="rounded-xl border border-slate-700 px-5 py-3 font-bold transition hover:border-cyan-400 disabled:opacity-30"
+            >
+              ← Kembali
+            </button>
+
+            {current < pertanyaan.length - 1 ? (
+
+              <button
+                type="button"
+                onClick={() => {
+
+                  if (jawabanSekarang === undefined) {
+                    alert(
+                      "Pilih salah satu jawaban terlebih dahulu."
+                    );
+                    return;
+                  }
+
+                  setCurrent((prev) => prev + 1);
+
+                }}
+                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
+              >
+                Berikutnya →
+              </button>
+
+            ) : (
+
+              <button
+                type="button"
+                onClick={submitScreening}
+                disabled={
+                  loading ||
+                  jawabanSekarang === undefined
+                }
+                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
+              >
+                {loading
+                  ? "Menyimpan..."
+                  : "Selesai Screening ✓"}
+              </button>
+
+            )}
+
+          </div>
+
+        </div>
 
         <p className="mt-6 text-center text-xs text-slate-600">
-          Data digunakan untuk sistem screening AERIS.
+          Skrining awal • Bukan diagnosis medis
         </p>
 
       </div>
