@@ -851,16 +851,23 @@ function ProgressBar({
 
   return (
     <div>
-      <p className="text-sm font-semibold text-slate-400">{label}</p>
+
       <div className="mb-2 flex items-center justify-between">
-        <div className="h-2 w-full rounded-full bg-slate-700">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        <span className="ml-2 text-sm font-semibold text-slate-400">{percentage}%</span>
+        <label className="text-sm font-semibold text-slate-300">
+          {label}
+        </label>
+        <span className="text-sm font-semibold text-slate-400">
+          {percentage}%
+        </span>
       </div>
+
+      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-700">
+        <div
+          className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-300"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+
     </div>
   );
 }
