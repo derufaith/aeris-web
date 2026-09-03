@@ -2,12 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import { supabase } from "../../lib/supabase";
 
 type Screening = {
   id: string;
@@ -15,28 +10,31 @@ type Screening = {
   skor: number;
   hasil: string;
   created_at: string;
-  users:
-    | {
-        id: string;
-        nama: string;
-        jenis_pengguna: string;
-        kelas: string | null;
-      }
-    | {
-        id: string;
-        nama: string;
-        jenis_pengguna: string;
-        kelas: string | null;
-      }[]
-    | null;
 };
+
+type User = {
+  id: string;
+  nama: string;
+  no_hp: string | null;
+  jenis_pengguna: string | null;
+  kelas: string | null;
+};
+
+type ScreeningData = Screening & {
+  user: User | null;
+};
+
+type Category = "normal" | "waspada" | "siaga";
 
 export default function KepsekDashboard() {
   const router = useRouter();
 
-  const [data, setData] = useState<Screening[]>([]);
+  const [data, setData] = useState<ScreeningData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [namaKepsek, setNamaKepsek] = useState("Kepala Sekolah");
+  const [noHpKepsek, setNoHpKepsek] = useState("-");
 
   useEffect(() => {
     const role = localStorage.getItem("aeris_role");
@@ -46,6 +44,14 @@ export default function KepsekDashboard() {
       return;
     }
 
+    setNamaKepsek(
+      localStorage.getItem("aeris_nama") || "Kepala Sekolah"
+    );
+
+    setNoHpKepsek(
+      localStorage.getItem("aeris_no_hp") || "-"
+    );
+
     loadData();
   }, [router]);
 
@@ -53,43 +59,92 @@ export default function KepsekDashboard() {
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase
-      .from("screenings")
-      .select(`
-        id,
-        user_id,
-        skor,
-        hasil,
-        created_at,
-        users (
-          id,
-          nama,
-          jenis_pengguna,
-          kelas
-        )
-      `)
-      .order("created_at", { ascending: false });
+    try {
+      // ===============================
+      // AMBIL SCREENINGS
+      // ===============================
 
-    if (error) {
-      console.error(error);
-      setError(error.message);
-      setLoading(false);
-      return;
+      const {
+        data: screenings,
+        error: screeningError,
+      } = await supabase
+        .from("screenings")
+        .select("id, user_id, skor, hasil, created_at")
+        .order("created_at", {
+          ascending: false,
+        });
+
+      if (screeningError) {
+        throw new Error(screeningError.message);
+      }
+
+      if (!screenings || screenings.length === 0) {
+        setData([]);
+        setLoading(false);
+        return;
+      }
+
+      // ===============================
+      // AMBIL USER
+      // ===============================
+
+      const userIds = Array.from(
+        new Set(
+          screenings.map(
+            (screening: Screening) => screening.user_id
+          )
+        )
+      );
+
+      const {
+        data: users,
+        error: usersError,
+      } = await supabase
+        .from("users")
+        .select(
+          "id, nama, no_hp, jenis_pengguna, kelas"
+        )
+        .in("id", userIds);
+
+      if (usersError) {
+        throw new Error(usersError.message);
+      }
+
+      // ===============================
+      // GABUNG DATA
+      // ===============================
+
+      const userMap = new Map<string, User>();
+
+      (users || []).forEach((user: User) => {
+        userMap.set(user.id, user);
+      });
+
+      const merged: ScreeningData[] =
+        screenings.map((screening: Screening) => ({
+          ...screening,
+          user: userMap.get(screening.user_id) || null,
+        }));
+
+      setData(merged);
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Gagal mengambil data."
+      );
     }
 
-    setData((data || []) as Screening[]);
     setLoading(false);
   }
 
-  function getUser(item: Screening) {
-    if (Array.isArray(item.users)) {
-      return item.users[0] || null;
-    }
+  // ===============================
+  // KATEGORI
+  // ===============================
 
-    return item.users;
-  }
-
-  function getCategory(hasil: string) {
+  function getCategory(hasil: string): Category {
     const value = hasil.toLowerCase();
 
     if (
@@ -109,17 +164,25 @@ export default function KepsekDashboard() {
     return "siaga";
   }
 
+  // ===============================
+  // STATISTIK
+  // ===============================
+
   const statistik = useMemo(() => {
     let normal = 0;
     let waspada = 0;
     let siaga = 0;
 
-    data.forEach((item) => {
+    data.forEach((item: ScreeningData) => {
       const category = getCategory(item.hasil);
 
-      if (category === "normal") normal++;
-      else if (category === "waspada") waspada++;
-      else siaga++;
+      if (category === "normal") {
+        normal++;
+      } else if (category === "waspada") {
+        waspada++;
+      } else {
+        siaga++;
+      }
     });
 
     return {
@@ -129,6 +192,10 @@ export default function KepsekDashboard() {
       siaga,
     };
   }, [data]);
+
+  // ===============================
+  // DATA PER KELAS
+  // ===============================
 
   const kelasData = useMemo(() => {
     const result: Record<
@@ -141,9 +208,8 @@ export default function KepsekDashboard() {
       }
     > = {};
 
-    data.forEach((item) => {
-      const user = getUser(item);
-      const kelas = user?.kelas || "Tidak diketahui";
+    data.forEach((item: ScreeningData) => {
+      const kelas = item.user?.kelas || "Tidak diketahui";
 
       if (!result[kelas]) {
         result[kelas] = {
@@ -158,44 +224,52 @@ export default function KepsekDashboard() {
 
       const category = getCategory(item.hasil);
 
-      if (category === "normal") result[kelas].normal++;
-      else if (category === "waspada") result[kelas].waspada++;
-      else result[kelas].siaga++;
+      if (category === "normal") {
+        result[kelas].normal++;
+      } else if (category === "waspada") {
+        result[kelas].waspada++;
+      } else {
+        result[kelas].siaga++;
+      }
     });
 
-    return Object.entries(result)
-      .sort((a, b) => b[1].total - a[1].total)
-      .slice(0, 10);
+    return Object.entries(result).sort(
+      (a, b) => b[1].total - a[1].total
+    );
   }, [data]);
 
-  const persentaseNormal =
-    statistik.total > 0
-      ? Math.round((statistik.normal / statistik.total) * 100)
-      : 0;
+  // ===============================
+  // LOGOUT
+  // ===============================
 
-  const persentaseWaspada =
-    statistik.total > 0
-      ? Math.round((statistik.waspada / statistik.total) * 100)
-      : 0;
+  function logout() {
+    localStorage.removeItem("aeris_role");
+    localStorage.removeItem("aeris_username");
+    localStorage.removeItem("aeris_nama");
+    localStorage.removeItem("aeris_no_hp");
 
-  const persentaseSiaga =
-    statistik.total > 0
-      ? Math.round((statistik.siaga / statistik.total) * 100)
-      : 0;
+    router.replace("/login");
+  }
+
+  // ===============================
+  // LOADING
+  // ===============================
 
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-cyan-400 font-black tracking-[0.35em]">
+
+          <p className="text-cyan-400 font-black tracking-[0.3em]">
             AERIS
           </p>
 
-          <div className="mt-5 h-8 w-8 mx-auto rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+          <div className="mt-5 mx-auto h-9 w-9 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
 
           <p className="mt-4 text-slate-400">
             Memuat dashboard...
           </p>
+
         </div>
       </main>
     );
@@ -205,32 +279,26 @@ export default function KepsekDashboard() {
     <main className="min-h-screen bg-slate-950 text-white">
 
       {/* HEADER */}
-      <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 flex items-center justify-between gap-4">
+      <header className="border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 flex items-center justify-between">
 
           <div>
             <p className="text-cyan-400 font-black tracking-[0.3em] text-sm">
               AERIS
             </p>
 
-            <h1 className="mt-1 text-xl sm:text-2xl font-black">
+            <h1 className="text-xl sm:text-2xl font-black mt-1">
               Dashboard Kepala Sekolah
             </h1>
 
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Monitoring kondisi risiko kesehatan warga sekolah
+            <p className="text-xs text-slate-500 mt-1">
+              Monitoring risiko kesehatan warga sekolah
             </p>
           </div>
 
           <button
-            onClick={() => {
-              localStorage.removeItem("aeris_role");
-              localStorage.removeItem("aeris_username");
-              localStorage.removeItem("aeris_nama");
-
-              router.replace("/login");
-            }}
-            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-800 transition"
+            onClick={logout}
+            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold hover:bg-slate-800"
           >
             Keluar
           </button>
@@ -240,172 +308,141 @@ export default function KepsekDashboard() {
 
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
 
-        {/* TITLE */}
-        <section className="mb-8">
-          <div className="rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-slate-900 p-6 sm:p-8">
+        {/* PROFIL KEPSEK */}
+        <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
 
-            <p className="text-cyan-400 text-sm font-bold tracking-widest uppercase">
-              Executive Overview
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
 
-            <h2 className="mt-2 text-2xl sm:text-4xl font-black">
-              Kondisi Risiko Sekolah
-            </h2>
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-widest">
+                Akun Kepala Sekolah
+              </p>
 
-            <p className="mt-3 text-slate-400 max-w-2xl">
-              Ringkasan hasil skrining warga sekolah berdasarkan
-              data yang tercatat pada sistem AERIS.
-            </p>
+              <h2 className="text-2xl font-black mt-2">
+                {namaKepsek}
+              </h2>
+
+              <p className="text-sm text-slate-500 mt-1">
+                Kepala Sekolah
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/5 px-5 py-4">
+
+              <p className="text-xs text-slate-500">
+                Nomor Telepon
+              </p>
+
+              <p className="text-lg font-black text-cyan-400 mt-1">
+                {noHpKepsek}
+              </p>
+
+            </div>
 
           </div>
+
         </section>
 
         {/* ERROR */}
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
-            <p className="font-bold text-red-400">
+          <section className="mt-6 rounded-3xl border border-red-500/30 bg-red-500/10 p-5">
+
+            <p className="font-black text-red-400">
               Gagal mengambil data
             </p>
 
-            <p className="mt-1 text-sm text-red-300">
+            <p className="text-sm text-red-300 mt-2 break-words">
               {error}
             </p>
 
             <button
               onClick={loadData}
-              className="mt-4 rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white"
+              className="mt-4 rounded-xl bg-red-500 px-4 py-2 text-sm font-bold"
             >
               Coba Lagi
             </button>
-          </div>
+
+          </section>
         )}
 
-        {/* STATISTIK UTAMA */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* EXECUTIVE OVERVIEW */}
+        <section className="mt-6 rounded-3xl border border-cyan-500/20 bg-cyan-400/5 p-6 sm:p-8">
+
+          <p className="text-cyan-400 text-sm font-black tracking-widest">
+            EXECUTIVE OVERVIEW
+          </p>
+
+          <h2 className="text-2xl sm:text-4xl font-black mt-2">
+            Kondisi Risiko Sekolah
+          </h2>
+
+          <p className="text-slate-400 mt-3 max-w-2xl">
+            Ringkasan hasil skrining warga sekolah
+            yang tercatat dalam sistem AERIS.
+          </p>
+
+        </section>
+
+        {/* STATISTIK */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
 
           <StatCard
             title="Total Skrining"
             value={statistik.total}
-            description="Seluruh data"
-            icon="◎"
+            type="total"
           />
 
           <StatCard
             title="Normal"
             value={statistik.normal}
-            description={`${persentaseNormal}% dari total`}
-            icon="✓"
             type="normal"
           />
 
           <StatCard
             title="Waspada"
             value={statistik.waspada}
-            description={`${persentaseWaspada}% dari total`}
-            icon="!"
             type="waspada"
           />
 
           <StatCard
             title="Siaga"
             value={statistik.siaga}
-            description={`${persentaseSiaga}% dari total`}
-            icon="⚠"
             type="siaga"
           />
 
         </section>
 
-        {/* RINGKASAN */}
-        <section className="mt-6 grid lg:grid-cols-3 gap-5">
+        {/* DISTRIBUSI */}
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-6">
 
-          <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h3 className="text-xl font-black">
+            Distribusi Risiko
+          </h3>
 
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-black">
-                  Distribusi Risiko
-                </h3>
+          <p className="text-sm text-slate-500 mt-1 mb-7">
+            Persentase hasil skrining sekolah
+          </p>
 
-                <p className="text-sm text-slate-500 mt-1">
-                  Gambaran hasil skrining sekolah
-                </p>
-              </div>
-            </div>
+          <RiskBar
+            label="Normal"
+            value={statistik.normal}
+            total={statistik.total}
+            type="normal"
+          />
 
-            <RiskBar
-              label="Normal"
-              value={statistik.normal}
-              total={statistik.total}
-              type="normal"
-            />
+          <RiskBar
+            label="Waspada"
+            value={statistik.waspada}
+            total={statistik.total}
+            type="waspada"
+          />
 
-            <RiskBar
-              label="Waspada"
-              value={statistik.waspada}
-              total={statistik.total}
-              type="waspada"
-            />
-
-            <RiskBar
-              label="Siaga"
-              value={statistik.siaga}
-              total={statistik.total}
-              type="siaga"
-            />
-
-          </div>
-
-          {/* STATUS */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-
-            <h3 className="text-lg font-black">
-              Status Sistem
-            </h3>
-
-            <p className="text-sm text-slate-500 mt-1">
-              Kondisi pemantauan AERIS
-            </p>
-
-            <div className="mt-7 flex items-center gap-4">
-
-              <div className="h-12 w-12 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center">
-                <div className="h-3 w-3 rounded-full bg-cyan-400 animate-pulse" />
-              </div>
-
-              <div>
-                <p className="font-bold text-cyan-400">
-                  SISTEM AKTIF
-                </p>
-
-                <p className="text-xs text-slate-500 mt-1">
-                  Database terhubung
-                </p>
-              </div>
-
-            </div>
-
-            <div className="mt-7 pt-5 border-t border-slate-800">
-
-              <p className="text-xs uppercase tracking-widest text-slate-500">
-                Data Terakhir
-              </p>
-
-              <p className="mt-2 font-bold">
-                {data.length > 0
-                  ? new Date(data[0].created_at).toLocaleString(
-                      "id-ID",
-                      {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }
-                    )
-                  : "Belum ada data"}
-              </p>
-
-            </div>
-
-          </div>
+          <RiskBar
+            label="Siaga"
+            value={statistik.siaga}
+            total={statistik.total}
+            type="siaga"
+          />
 
         </section>
 
@@ -414,12 +451,12 @@ export default function KepsekDashboard() {
 
           <div className="p-6 border-b border-slate-800">
 
-            <h3 className="text-lg font-black">
+            <h3 className="text-xl font-black">
               Ringkasan Berdasarkan Kelas
             </h3>
 
             <p className="text-sm text-slate-500 mt-1">
-              Maksimal 10 kelas dengan jumlah skrining terbanyak
+              Rekap hasil skrining setiap kelas
             </p>
 
           </div>
@@ -434,62 +471,66 @@ export default function KepsekDashboard() {
 
             <div className="overflow-x-auto">
 
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[650px]">
 
                 <thead>
-                  <tr className="text-left text-slate-500 border-b border-slate-800">
-                    <th className="px-6 py-4 font-bold">
+                  <tr className="border-b border-slate-800 text-left">
+
+                    <th className="px-6 py-4 text-slate-500">
                       Kelas
                     </th>
 
-                    <th className="px-6 py-4 font-bold">
+                    <th className="px-6 py-4 text-slate-500">
                       Total
                     </th>
 
-                    <th className="px-6 py-4 font-bold text-emerald-400">
+                    <th className="px-6 py-4 text-emerald-400">
                       Normal
                     </th>
 
-                    <th className="px-6 py-4 font-bold text-yellow-400">
+                    <th className="px-6 py-4 text-yellow-400">
                       Waspada
                     </th>
 
-                    <th className="px-6 py-4 font-bold text-red-400">
+                    <th className="px-6 py-4 text-red-400">
                       Siaga
                     </th>
+
                   </tr>
                 </thead>
 
                 <tbody>
 
-                  {kelasData.map(([kelas, item]) => (
-                    <tr
-                      key={kelas}
-                      className="border-b border-slate-800/70 hover:bg-slate-800/40"
-                    >
+                  {kelasData.map(
+                    ([kelas, item]) => (
+                      <tr
+                        key={kelas}
+                        className="border-b border-slate-800/70"
+                      >
 
-                      <td className="px-6 py-4 font-black">
-                        {kelas}
-                      </td>
+                        <td className="px-6 py-4 font-black">
+                          {kelas}
+                        </td>
 
-                      <td className="px-6 py-4 text-slate-300">
-                        {item.total}
-                      </td>
+                        <td className="px-6 py-4">
+                          {item.total}
+                        </td>
 
-                      <td className="px-6 py-4 text-emerald-400 font-bold">
-                        {item.normal}
-                      </td>
+                        <td className="px-6 py-4 text-emerald-400 font-bold">
+                          {item.normal}
+                        </td>
 
-                      <td className="px-6 py-4 text-yellow-400 font-bold">
-                        {item.waspada}
-                      </td>
+                        <td className="px-6 py-4 text-yellow-400 font-bold">
+                          {item.waspada}
+                        </td>
 
-                      <td className="px-6 py-4 text-red-400 font-bold">
-                        {item.siaga}
-                      </td>
+                        <td className="px-6 py-4 text-red-400 font-bold">
+                          {item.siaga}
+                        </td>
 
-                    </tr>
-                  ))}
+                      </tr>
+                    )
+                  )}
 
                 </tbody>
 
@@ -501,24 +542,26 @@ export default function KepsekDashboard() {
 
         </section>
 
-        {/* DATA TERBARU */}
+        {/* SKRINING TERBARU */}
         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 overflow-hidden">
 
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-4">
 
             <div>
-              <h3 className="text-lg font-black">
+
+              <h3 className="text-xl font-black">
                 Skrining Terbaru
               </h3>
 
               <p className="text-sm text-slate-500 mt-1">
                 Lima data skrining terakhir
               </p>
+
             </div>
 
             <button
               onClick={loadData}
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold hover:bg-slate-800 transition"
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold hover:bg-slate-800"
             >
               ↻ Refresh
             </button>
@@ -527,52 +570,68 @@ export default function KepsekDashboard() {
 
           <div className="divide-y divide-slate-800">
 
-            {data.slice(0, 5).map((item) => {
+            {data.slice(0, 5).map(
+              (item: ScreeningData) => {
 
-              const user = getUser(item);
-              const category = getCategory(item.hasil);
+                const category = getCategory(
+                  item.hasil
+                );
 
-              return (
-                <div
-                  key={item.id}
-                  className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                >
+                return (
+                  <div
+                    key={item.id}
+                    className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                  >
 
-                  <div>
+                    <div>
 
-                    <p className="font-bold">
-                      {user?.nama || "Pengguna"}
-                    </p>
-
-                    <p className="text-xs text-slate-500 mt-1">
-                      {user?.kelas || "Tanpa kelas"} •{" "}
-                      {user?.jenis_pengguna || "Warga sekolah"}
-                    </p>
-
-                  </div>
-
-                  <div className="flex items-center gap-5">
-
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">
-                        Skor
+                      <p className="font-black">
+                        {item.user?.nama || "Pengguna"}
                       </p>
 
-                      <p className="font-black text-lg">
-                        {item.skor}
+                      <p className="text-xs text-slate-500 mt-1">
+                        {item.user?.kelas || "Tanpa kelas"}
+                        {" • "}
+                        {item.user?.jenis_pengguna ||
+                          "Warga sekolah"}
                       </p>
+
+                      <p className="text-xs text-slate-600 mt-1">
+                        {new Date(
+                          item.created_at
+                        ).toLocaleString("id-ID", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </p>
+
                     </div>
 
-                    <RiskBadge
-                      category={category}
-                      hasil={item.hasil}
-                    />
+                    <div className="flex items-center gap-5">
+
+                      <div className="text-right">
+
+                        <p className="text-xs text-slate-500">
+                          Skor
+                        </p>
+
+                        <p className="text-2xl font-black">
+                          {item.skor}
+                        </p>
+
+                      </div>
+
+                      <RiskBadge
+                        category={category}
+                        hasil={item.hasil}
+                      />
+
+                    </div>
 
                   </div>
-
-                </div>
-              );
-            })}
+                );
+              }
+            )}
 
             {data.length === 0 && (
               <div className="p-10 text-center text-slate-500">
@@ -595,85 +654,72 @@ export default function KepsekDashboard() {
             Air Exposure Risk & Infection Screening System
           </p>
 
-          <p className="text-slate-700 text-xs mt-1">
-            Sistem mitigasi risiko kesehatan warga sekolah
-          </p>
-
         </footer>
 
       </div>
-
     </main>
   );
 }
 
 
-/* =========================
-   KOMPONEN STAT CARD
-========================= */
+/* ==========================================
+   STAT CARD
+========================================== */
 
 function StatCard({
   title,
   value,
-  description,
-  icon,
   type,
 }: {
   title: string;
   value: number;
-  description: string;
-  icon: string;
-  type?: "normal" | "waspada" | "siaga";
+  type: Category | "total";
 }) {
+  const styles = {
+    total:
+      "text-cyan-400 border-cyan-400/20 bg-cyan-400/10",
 
-  const iconStyle = {
     normal:
-      "bg-emerald-400/10 border-emerald-400/20 text-emerald-400",
+      "text-emerald-400 border-emerald-400/20 bg-emerald-400/10",
+
     waspada:
-      "bg-yellow-400/10 border-yellow-400/20 text-yellow-400",
+      "text-yellow-400 border-yellow-400/20 bg-yellow-400/10",
+
     siaga:
-      "bg-red-400/10 border-red-400/20 text-red-400",
+      "text-red-400 border-red-400/20 bg-red-400/10",
   };
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
 
-      <div className="flex items-start justify-between">
-
-        <div>
-          <p className="text-xs sm:text-sm text-slate-500 font-bold">
-            {title}
-          </p>
-
-          <p className="mt-2 text-3xl sm:text-4xl font-black">
-            {value}
-          </p>
-
-          <p className="mt-1 text-xs text-slate-600">
-            {description}
-          </p>
-        </div>
-
-        <div
-          className={`h-10 w-10 rounded-xl border flex items-center justify-center font-black ${
-            type
-              ? iconStyle[type]
-              : "bg-cyan-400/10 border-cyan-400/20 text-cyan-400"
-          }`}
-        >
-          {icon}
-        </div>
-
+      <div
+        className={`h-10 w-10 rounded-xl border flex items-center justify-center font-black ${styles[type]}`}
+      >
+        {type === "total"
+          ? "◎"
+          : type === "normal"
+          ? "✓"
+          : type === "waspada"
+          ? "!"
+          : "⚠"}
       </div>
+
+      <p className="text-xs sm:text-sm text-slate-500 font-bold mt-5">
+        {title}
+      </p>
+
+      <p className="text-3xl sm:text-4xl font-black mt-1">
+        {value}
+      </p>
 
     </div>
   );
 }
 
 
-/* =========================
+/* ==========================================
    RISK BAR
-========================= */
+========================================== */
 
 function RiskBar({
   label,
@@ -684,26 +730,27 @@ function RiskBar({
   label: string;
   value: number;
   total: number;
-  type: "normal" | "waspada" | "siaga";
+  type: Category;
 }) {
-
   const percentage =
-    total > 0 ? Math.round((value / total) * 100) : 0;
+    total > 0
+      ? Math.round((value / total) * 100)
+      : 0;
 
-  const barStyle = {
+  const barStyles = {
     normal: "bg-emerald-400",
     waspada: "bg-yellow-400",
     siaga: "bg-red-400",
   };
 
-  const textStyle = {
+  const textStyles = {
     normal: "text-emerald-400",
     waspada: "text-yellow-400",
     siaga: "text-red-400",
   };
 
   return (
-    <div className="mb-6 last:mb-0">
+    <div className="mb-6">
 
       <div className="flex justify-between mb-2">
 
@@ -711,7 +758,9 @@ function RiskBar({
           {label}
         </span>
 
-        <span className={`text-sm font-black ${textStyle[type]}`}>
+        <span
+          className={`text-sm font-black ${textStyles[type]}`}
+        >
           {value} ({percentage}%)
         </span>
 
@@ -720,8 +769,10 @@ function RiskBar({
       <div className="h-3 rounded-full bg-slate-800 overflow-hidden">
 
         <div
-          className={`h-full rounded-full ${barStyle[type]} transition-all duration-700`}
-          style={{ width: `${percentage}%` }}
+          className={`h-full rounded-full ${barStyles[type]}`}
+          style={{
+            width: `${percentage}%`,
+          }}
         />
 
       </div>
@@ -731,30 +782,31 @@ function RiskBar({
 }
 
 
-/* =========================
+/* ==========================================
    RISK BADGE
-========================= */
+========================================== */
 
 function RiskBadge({
   category,
   hasil,
 }: {
-  category: "normal" | "waspada" | "siaga";
+  category: Category;
   hasil: string;
 }) {
-
-  const style = {
+  const styles = {
     normal:
       "bg-emerald-400/10 border-emerald-400/20 text-emerald-400",
+
     waspada:
       "bg-yellow-400/10 border-yellow-400/20 text-yellow-400",
+
     siaga:
       "bg-red-400/10 border-red-400/20 text-red-400",
   };
 
   return (
     <span
-      className={`rounded-xl border px-3 py-2 text-xs font-black ${style[category]}`}
+      className={`rounded-xl border px-3 py-2 text-xs font-black ${styles[category]}`}
     >
       {hasil}
     </span>
